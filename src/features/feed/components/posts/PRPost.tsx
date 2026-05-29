@@ -1,6 +1,5 @@
 import { Heart, MessageCircle, Send } from "lucide-react";
 import { PostHeader } from "../PostHeader";
-import { useState } from "react";
 import { IconButton, LikeButton } from "../IconButton";
 
 type Props = {

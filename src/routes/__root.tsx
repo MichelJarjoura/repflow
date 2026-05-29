@@ -9,7 +9,7 @@ import {
 } from "@tanstack/react-router";
 
 import appCss from "../styles.css?url";
-import { AppNav } from "@/components/AppNav";
+import { AppNav } from "@/shared/components/AppNav";
 
 function NotFoundComponent() {
   return (

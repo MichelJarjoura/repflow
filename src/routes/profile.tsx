@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { AppNav, FloatingLogButton } from "@/components/AppNav";
+import { AppNav, FloatingLogButton } from "@/shared/components/AppNav";
 import avatar from "@/assets/avatar-1.jpg";
 
 export const Route = createFileRoute("/profile")({

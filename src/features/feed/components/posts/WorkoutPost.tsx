@@ -1,7 +1,7 @@
-import { useState } from "react";
 import { MessageCircle, Heart, Send } from "lucide-react";
 import { PostHeader } from "../PostHeader";
 import { IconButton, LikeButton } from "../IconButton";
+
 
 type Exercise = {
   name: string;

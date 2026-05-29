@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { AppNav, FloatingLogButton } from "@/components/AppNav";
+import { AppNav, FloatingLogButton } from "@/shared/components/AppNav";
 import { RunPost } from "@/features/feed/components/posts/RunPost";
 import avatar1 from "@/assets/avatar-1.jpg";
 import avatar2 from "@/assets/avatar-2.jpg";
