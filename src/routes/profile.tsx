@@ -42,7 +42,7 @@ function ProfilePage() {
               alt="Marcus Thorne"
               width={120}
               height={120}
-              className="size-28 rounded-full object-cover outline outline-2 outline-brand/40"
+              className="size-28 rounded-full object-cover outline outline-brand/40"
             />
             <div className="flex-1">
               <p className="text-[10px] font-mono text-muted-foreground uppercase tracking-widest mb-2">

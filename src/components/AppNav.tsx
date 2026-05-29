@@ -38,7 +38,7 @@ export function AppNav() {
           </div>
         </div>
         <div className="flex items-center gap-4">
-          <div className="size-8 rounded-full bg-elevated outline outline-1 outline-white/10 overflow-hidden">
+          <div className="size-8 rounded-full bg-elevated outline outline-white/10 overflow-hidden">
             <img
               src={avatar}
               alt="Your profile"

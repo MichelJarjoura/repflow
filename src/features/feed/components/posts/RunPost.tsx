@@ -13,7 +13,7 @@ export function RunPost({ avatar, name, meta, distance, pace }: Props) {
   return (
     <article className="bg-card border border-border rounded-xl overflow-hidden">
       <PostHeader avatar={avatar} name={name} meta={meta} bordered={false} />
-      <div className="relative aspect-[16/9] bg-elevated">
+      <div className="relative aspect-video bg-elevated">
         <img
           src={routeImg}
           alt={`Run route — ${distance}`}
