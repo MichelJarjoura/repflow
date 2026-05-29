@@ -13,12 +13,12 @@ import avatar3 from "@/assets/avatar-3.jpg";
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "IRONGRAPH — Feed" },
+      { title: "REPFLOW" },
       {
         name: "description",
         content: "The progress-first feed for lifters. PRs, workouts, runs from the athletes you follow.",
       },
-      { property: "og:title", content: "IRONGRAPH — Feed" },
+      { property: "og:title", content: "REPFLOW" },
       {
         property: "og:description",
         content: "The progress-first feed for lifters. PRs, workouts, runs.",
@@ -62,7 +62,7 @@ function Index() {
             meta="4 hours ago • Late Night Push"
             volume="8,420 KG"
             duration="1H 12M"
-            respects={24}
+            likes={24}
             exercises={[
               { name: "Incline DB Bench", detail: "3 × 10 @ 32kg" },
               { name: "Weighted Dips", detail: "4 × 12 @ BW+15" },
@@ -92,7 +92,7 @@ function Index() {
             meta="Yesterday • Heavy Pull"
             volume="11,240 KG"
             duration="1H 28M"
-            respects={41}
+            likes={41}
             exercises={[
               { name: "Deadlift", detail: "5 × 3 @ 180kg" },
               { name: "Pendlay Row", detail: "4 × 8 @ 90kg" },
