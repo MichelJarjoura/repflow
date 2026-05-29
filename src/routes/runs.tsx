@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { AppNav, FloatingLogButton } from "@/components/AppNav";
-import { RunPost } from "@/components/feed/RunPost";
+import { RunPost } from "@/features/feed/components/RunPost";
 import avatar1 from "@/assets/avatar-1.jpg";
 import avatar2 from "@/assets/avatar-2.jpg";
 import avatar3 from "@/assets/avatar-3.jpg";
@@ -8,9 +8,9 @@ import avatar3 from "@/assets/avatar-3.jpg";
 export const Route = createFileRoute("/runs")({
   head: () => ({
     meta: [
-      { title: "IRONGRAPH — Runs" },
+      { title: "REPFLOW — Runs" },
       { name: "description", content: "Recent runs with route, distance, and pace. Lifestyle, not leaderboard." },
-      { property: "og:title", content: "IRONGRAPH — Runs" },
+      { property: "og:title", content: "REPFLOW — Runs" },
       { property: "og:description", content: "Recent runs with route, distance, and pace." },
     ],
   }),

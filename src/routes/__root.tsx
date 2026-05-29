@@ -72,14 +72,14 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "IRONGRAPH — Every workout is social content" },
+      { title: "REPFLOW — Every workout is social content" },
       { name: "description", content: "The social platform for lifters. Log workouts, track PRs, share runs — build your fitness identity through progress." },
-      { name: "author", content: "IRONGRAPH" },
-      { property: "og:title", content: "IRONGRAPH — Every workout is social content" },
+      { name: "author", content: "REPFLOW" },
+      { property: "og:title", content: "REPFLOW — Every workout is social content" },
       { property: "og:description", content: "Log workouts, track PRs, share runs. Build your fitness identity through progress." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
-      { name: "twitter:site", content: "@irongraph" },
+      { name: "twitter:site", content: "@REPFLOW" },
     ],
     links: [
       { rel: "preconnect", href: "https://fonts.googleapis.com" },

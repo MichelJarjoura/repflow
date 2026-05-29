@@ -12,7 +12,7 @@ export function PRPost({ avatar, name, meta, lift, value }: Props) {
   return (
     <article className="bg-card border border-brand/30 rounded-xl overflow-hidden shadow-[0_0_40px_-15px_rgba(223,255,0,0.15)]">
       <PostHeader avatar={avatar} name={name} meta={meta} badge="New PR" />
-      <div className="p-6 text-center bg-gradient-to-b from-brand/5 to-transparent">
+      <div className="p-6 text-center bg-linear-to-b from-brand/5 to-transparent">
         <h3 className="text-5xl font-display tracking-tighter mb-2 italic underline decoration-brand/50 decoration-4">
           {value}
         </h3>

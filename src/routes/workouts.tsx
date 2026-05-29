@@ -4,9 +4,9 @@ import { AppNav, FloatingLogButton } from "@/components/AppNav";
 export const Route = createFileRoute("/workouts")({
   head: () => ({
     meta: [
-      { title: "IRONGRAPH — Workouts" },
+      { title: "REPFLOW — Workouts" },
       { name: "description", content: "Browse training splits and templates to copy into your program." },
-      { property: "og:title", content: "IRONGRAPH — Workouts" },
+      { property: "og:title", content: "REPFLOW — Workouts" },
       { property: "og:description", content: "Browse training splits and templates." },
     ],
   }),

@@ -5,9 +5,9 @@ import avatar from "@/assets/avatar-1.jpg";
 export const Route = createFileRoute("/profile")({
   head: () => ({
     meta: [
-      { title: "IRONGRAPH — Profile" },
+      { title: "REPFLOW — Profile" },
       { name: "description", content: "Your strength identity: PRs, weekly volume, streaks." },
-      { property: "og:title", content: "IRONGRAPH — Profile" },
+      { property: "og:title", content: "REPFLOW — Profile" },
       { property: "og:description", content: "Your strength identity." },
     ],
   }),

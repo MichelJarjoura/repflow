@@ -116,7 +116,7 @@ function LikeButton({ likes }: LikeButtonProps) {
   const [likeCount, setLikeCount] = useState(likes);
 
 
-  // temp frondend code .......
+  // temporary code .......
 
   function handleLike() {
     if (liked) {
