@@ -2,7 +2,7 @@ import { Link, useRouterState } from "@tanstack/react-router";
 import avatar from "@/assets/avatar-1.jpg";
 
 const links = [
-  { to: "/", label: "FEED" },
+  { to: "/feed", label: "FEED" },
   { to: "/workouts", label: "WORKOUTS" },
   { to: "/runs", label: "RUNS" },
   { to: "/profile", label: "PROFILE" },

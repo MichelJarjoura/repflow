@@ -1,4 +1,4 @@
-import { PostHeader } from "./PostHeader";
+import { PostHeader } from "../PostHeader";
 import routeImg from "@/assets/run-route.jpg";
 
 type Props = {

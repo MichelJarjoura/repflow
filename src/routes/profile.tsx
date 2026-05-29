@@ -33,8 +33,6 @@ const recent = [
 
 function ProfilePage() {
   return (
-    <div className="min-h-screen bg-surface text-foreground">
-      <AppNav />
       <main className="max-w-5xl mx-auto px-6 py-8 space-y-10">
         {/* Identity header */}
         <header className="bg-card border border-border rounded-xl overflow-hidden">
@@ -149,8 +147,6 @@ function ProfilePage() {
           </div>
         </section>
       </main>
-      <FloatingLogButton />
-    </div>
   );
 }
 

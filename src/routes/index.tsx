@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Outlet } from "@tanstack/react-router";
 import { AppNav, FloatingLogButton } from "@/components/AppNav";
 
 export const Route = createFileRoute("/")({
@@ -23,9 +23,7 @@ export const Route = createFileRoute("/")({
 function Index() {
   return (
     <div className="min-h-screen bg-surface text-foreground">
-      <AppNav />
-      
-      <FloatingLogButton />
+
     </div>
   );
 }

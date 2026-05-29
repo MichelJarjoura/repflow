@@ -1,4 +1,7 @@
-import { PostHeader } from "./PostHeader";
+import { Heart, MessageCircle, Send } from "lucide-react";
+import { PostHeader } from "../PostHeader";
+import { useState } from "react";
+import { IconButton, LikeButton } from "../IconButton";
 
 type Props = {
   avatar: string;
@@ -6,9 +9,10 @@ type Props = {
   meta: string;
   lift: string;
   value: string;
+  likes: number;
 };
 
-export function PRPost({ avatar, name, meta, lift, value }: Props) {
+export function PRPost({ avatar, name, meta, lift, value, likes }: Props) {
   return (
     <article className="bg-card border border-brand/30 rounded-xl overflow-hidden shadow-[0_0_40px_-15px_rgba(223,255,0,0.15)]">
       <PostHeader avatar={avatar} name={name} meta={meta} badge="New PR" />
@@ -20,21 +24,21 @@ export function PRPost({ avatar, name, meta, lift, value }: Props) {
           {lift}
         </p>
       </div>
-      <div className="p-4 flex gap-2 border-t border-border">
-        <ReactionButton label="Respect" />
-        <ReactionButton label="Spot" />
+      <div className="p-4 bg-surface/40 flex items-center gap-4">
+      
+        <LikeButton likes={likes} />
+
+        <IconButton>
+          <MessageCircle size={20} />
+        </IconButton>
+
+        <IconButton>
+          <Send size={20} />
+        </IconButton>
       </div>
     </article>
   );
 }
 
-function ReactionButton({ label }: { label: string }) {
-  return (
-    <button
-      type="button"
-      className="flex-1 bg-elevated hover:bg-elevated/70 py-3 rounded-lg text-xs font-bold uppercase tracking-widest transition-colors"
-    >
-      {label}
-    </button>
-  );
-}
+
+

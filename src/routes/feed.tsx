@@ -1,7 +1,7 @@
 import { IdentityCard } from "@/features/feed/components/IdentityCard";
-import { PRPost } from "@/features/feed/components/PRPost";
-import { WorkoutPost } from "@/features/feed/components/WorkoutPost";
-import { RunPost } from "@/features/feed/components/RunPost";
+import { PRPost } from "@/features/feed/components/posts/PRPost";
+import { WorkoutPost } from "@/features/feed/components/posts/WorkoutPost";
+import { RunPost } from "@/features/feed/components/posts/RunPost";
 import { RightRail } from "@/features/feed/components/RightRail";
 import { FeedFilter } from "@/features/feed/components/FeedFilter";
 import avatar1 from "@/assets/avatar-1.jpg";
@@ -36,6 +36,7 @@ function RouteComponent() {
       meta="2 hours ago"
       lift="Overhead Press"
       value="140 KG"
+      likes={120}
     />
 
     <WorkoutPost
@@ -66,6 +67,8 @@ function RouteComponent() {
       meta="Yesterday"
       lift="Conventional Deadlift"
       value="172.5 KG"
+      likes={10}
+
     />
 
     <WorkoutPost

@@ -60,9 +60,7 @@ const templates = [
 
 function WorkoutsPage() {
   return (
-    <div className="min-h-screen bg-surface text-foreground">
-      <AppNav />
-      <main className="max-w-5xl mx-auto px-6 py-8 space-y-10">
+     <main className="max-w-5xl mx-auto px-6 py-8 space-y-10">
         <header className="flex items-end justify-between border-b border-border pb-6">
           <div>
             <h1 className="font-display text-5xl tracking-tighter">WORKOUTS</h1>
@@ -108,7 +106,5 @@ function WorkoutsPage() {
           ))}
         </div>
       </main>
-      <FloatingLogButton />
-    </div>
   );
 }

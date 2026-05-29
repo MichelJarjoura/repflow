@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { AppNav, FloatingLogButton } from "@/components/AppNav";
-import { RunPost } from "@/features/feed/components/RunPost";
+import { RunPost } from "@/features/feed/components/posts/RunPost";
 import avatar1 from "@/assets/avatar-1.jpg";
 import avatar2 from "@/assets/avatar-2.jpg";
 import avatar3 from "@/assets/avatar-3.jpg";
@@ -19,8 +19,6 @@ export const Route = createFileRoute("/runs")({
 
 function RunsPage() {
   return (
-    <div className="min-h-screen bg-surface text-foreground">
-      <AppNav />
       <main className="max-w-5xl mx-auto px-6 py-8 space-y-10">
         <header className="flex items-end justify-between border-b border-border pb-6">
           <div>
@@ -68,8 +66,6 @@ function RunsPage() {
           />
         </section>
       </main>
-      <FloatingLogButton />
-    </div>
   );
 }
 
