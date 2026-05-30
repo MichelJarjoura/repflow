@@ -2,7 +2,6 @@ import { MessageCircle, Heart, Send } from "lucide-react";
 import { PostHeader } from "../PostHeader";
 import { IconButton, LikeButton } from "../IconButton";
 
-
 type Exercise = {
   name: string;
   detail: string;
@@ -18,15 +17,7 @@ type Props = {
   likes: number;
 };
 
-export function WorkoutPost({
-  avatar,
-  name,
-  meta,
-  volume,
-  duration,
-  exercises,
-  likes,
-}: Props) {
+export function WorkoutPost({ avatar, name, meta, volume, duration, exercises, likes }: Props) {
   return (
     <article className="bg-card border border-border rounded-xl overflow-hidden">
       <PostHeader avatar={avatar} name={name} meta={meta} />
@@ -55,18 +46,12 @@ export function WorkoutPost({
             <div
               key={ex.name}
               className={`flex justify-between text-sm py-2 ${
-                i < exercises.length - 1
-                  ? "border-b border-white/5"
-                  : ""
+                i < exercises.length - 1 ? "border-b border-white/5" : ""
               }`}
             >
-              <span className="text-foreground/80 italic">
-                {ex.name}
-              </span>
+              <span className="text-foreground/80 italic">{ex.name}</span>
 
-              <span className="text-muted-foreground font-mono">
-                {ex.detail}
-              </span>
+              <span className="text-muted-foreground font-mono">{ex.detail}</span>
             </div>
           ))}
         </div>

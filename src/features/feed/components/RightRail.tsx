@@ -5,9 +5,7 @@ export function RightRail() {
         <h2 className="font-display text-xs tracking-[0.2em] text-brand mb-4 uppercase">
           Weekly Challenge
         </h2>
-        <p className="text-lg font-display mb-1 tracking-tight italic">
-          THE 50-TON CLUB
-        </p>
+        <p className="text-lg font-display mb-1 tracking-tight italic">THE 50-TON CLUB</p>
         <p className="text-xs text-muted-foreground mb-4">
           Lift 50,000kg cumulative volume this week.
         </p>

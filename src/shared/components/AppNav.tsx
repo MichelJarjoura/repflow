@@ -16,7 +16,7 @@ export function AppNav() {
       <div className="max-w-5xl mx-auto px-6 h-16 flex items-center justify-between">
         <div className="flex items-center gap-8">
           <Link to="/" className="font-display text-2xl tracking-tighter text-brand">
-            REP<span style={{color: "white"}}>FLOW</span>
+            REP<span style={{ color: "white" }}>FLOW</span>
           </Link>
           <div className="hidden md:flex items-center gap-6 text-sm font-medium tracking-wide text-stone-400">
             {links.map((l) => {
@@ -25,11 +25,7 @@ export function AppNav() {
                 <Link
                   key={l.to}
                   to={l.to}
-                  className={
-                    active
-                      ? "text-brand"
-                      : "hover:text-foreground transition-colors"
-                  }
+                  className={active ? "text-brand" : "hover:text-foreground transition-colors"}
                 >
                   {l.label}
                 </Link>

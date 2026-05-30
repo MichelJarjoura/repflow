@@ -19,12 +19,9 @@ export function PRPost({ avatar, name, meta, lift, value, likes }: Props) {
         <h3 className="text-5xl font-display tracking-tighter mb-2 italic underline decoration-brand/50 decoration-4">
           {value}
         </h3>
-        <p className="text-muted-foreground uppercase tracking-[0.3em] text-[10px]">
-          {lift}
-        </p>
+        <p className="text-muted-foreground uppercase tracking-[0.3em] text-[10px]">{lift}</p>
       </div>
       <div className="p-4 bg-surface/40 flex items-center gap-4">
-      
         <LikeButton likes={likes} />
 
         <IconButton>
@@ -38,6 +35,3 @@ export function PRPost({ avatar, name, meta, lift, value, likes }: Props) {
     </article>
   );
 }
-
-
-

@@ -28,15 +28,11 @@ export function IdentityCard() {
       <div className="pt-4 border-t border-border">
         <div className="flex justify-between items-end">
           <div>
-            <p className="text-[10px] text-muted-foreground uppercase tracking-widest">
-              Streak
-            </p>
+            <p className="text-[10px] text-muted-foreground uppercase tracking-widest">Streak</p>
             <p className="text-xl font-display text-brand">12 DAYS</p>
           </div>
           <div className="text-right">
-            <p className="text-[10px] text-muted-foreground uppercase tracking-widest">
-              Vol/Wk
-            </p>
+            <p className="text-[10px] text-muted-foreground uppercase tracking-widest">Vol/Wk</p>
             <p className="text-xl font-display text-foreground">42.5T</p>
           </div>
         </div>
