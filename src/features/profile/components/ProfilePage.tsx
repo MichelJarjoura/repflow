@@ -1,8 +1,8 @@
 import avatar from "@/assets/avatar-1.jpg";
 import { WorkoutStats } from "@/features/workouts/components/WorkoutStats";
-import { PRPost } from "@/features/feed/components/posts/PRPost";
-import { WorkoutPost } from "@/features/feed/components/posts/WorkoutPost";
-import { RunPost } from "@/features/feed/components/posts/RunPost";
+import { PRPost } from "@/features/feed/components/posts/views/PRPost";
+import { WorkoutPost } from "@/features/feed/components/posts/views/WorkoutPost";
+import { RunPost } from "@/features/feed/components/posts/views/RunPost";
 import avatar1 from "@/assets/avatar-1.jpg";
 
 const prs = [

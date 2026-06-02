@@ -1,5 +1,5 @@
-import { PostHeader } from "./post-components/PostHeader";
-import PostFooter from "./post-components/PostFooter";
+import { PostHeader } from "../post-components/PostHeader";
+import PostFooter from "../post-components/PostFooter";
 
 type Exercise = {
   name: string;

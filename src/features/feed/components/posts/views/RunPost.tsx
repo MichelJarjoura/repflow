@@ -1,6 +1,6 @@
-import { PostHeader } from "./post-components/PostHeader";
+import { PostHeader } from "../post-components/PostHeader";
 import routeImg from "@/assets/run-route.jpg";
-import PostFooter from "./post-components/PostFooter";
+import PostFooter from "../post-components/PostFooter";
 
 type Props = {
   avatar: string;
