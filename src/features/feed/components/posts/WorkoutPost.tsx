@@ -1,6 +1,5 @@
-import { MessageCircle, Heart, Send } from "lucide-react";
-import { PostHeader } from "../PostHeader";
-import { IconButton, LikeButton } from "../IconButton";
+import { PostHeader } from "./post-components/PostHeader";
+import PostFooter from "./post-components/PostFooter";
 
 type Exercise = {
   name: string;
@@ -14,10 +13,9 @@ type Props = {
   volume: string;
   duration: string;
   exercises: Exercise[];
-  likes: number;
 };
 
-export function WorkoutPost({ avatar, name, meta, volume, duration, exercises, likes }: Props) {
+export function WorkoutPost({ avatar, name, meta, volume, duration, exercises }: Props) {
   return (
     <article className="bg-card border border-border rounded-xl overflow-hidden">
       <PostHeader avatar={avatar} name={name} meta={meta} />
@@ -56,18 +54,7 @@ export function WorkoutPost({ avatar, name, meta, volume, duration, exercises, l
           ))}
         </div>
       </div>
-
-      <div className="p-4 bg-surface/40 flex items-center gap-4">
-        <LikeButton likes={likes} />
-
-        <IconButton>
-          <MessageCircle size={20} />
-        </IconButton>
-
-        <IconButton>
-          <Send size={20} />
-        </IconButton>
-      </div>
+      <PostFooter/>
     </article>
   );
 }

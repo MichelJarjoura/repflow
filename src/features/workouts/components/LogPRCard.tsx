@@ -20,7 +20,9 @@ export function LogPRCard() {
       <div className="p-8">
         <div className="flex items-center justify-between mb-8">
           <div>
-            <span className="text-[10px] font-mono text-brand uppercase tracking-[0.3em] mb-1 block">Achievement</span>
+            <span className="text-[10px] font-mono text-brand uppercase tracking-[0.3em] mb-1 block">
+              Achievement
+            </span>
             <h2 className="font-display text-3xl tracking-tight">LOG NEW PR</h2>
           </div>
           <div className="size-12 rounded-full bg-brand/10 flex items-center justify-center text-brand ring-1 ring-brand/20">
@@ -35,14 +37,21 @@ export function LogPRCard() {
               <Dumbbell size={12} /> Select Movement
             </label>
             <div className="relative group">
-              <select 
+              <select
                 value={exercise}
                 onChange={(e) => setExercise(e.target.value)}
                 className="w-full bg-surface border border-border rounded-xl px-5 py-4 text-base font-medium appearance-none focus:outline-hidden focus:ring-2 focus:ring-brand/30 transition-all cursor-pointer group-hover:border-brand/40"
               >
-                {exercises.map(ex => <option key={ex} value={ex}>{ex}</option>)}
+                {exercises.map((ex) => (
+                  <option key={ex} value={ex}>
+                    {ex}
+                  </option>
+                ))}
               </select>
-              <ChevronDown className="absolute right-5 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none group-hover:text-brand transition-colors" size={20} />
+              <ChevronDown
+                className="absolute right-5 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none group-hover:text-brand transition-colors"
+                size={20}
+              />
             </div>
           </div>
 
@@ -52,24 +61,26 @@ export function LogPRCard() {
               <Weight size={12} /> Load Amount (KG)
             </label>
             <div className="relative group">
-            <input
-  type="number"
-  value={weight}
-  onChange={(e) => setWeight(e.target.value)}
-  placeholder="000"
-  className="no-spinner w-full bg-surface border border-border rounded-xl px-5 py-4 text-3xl font-display tracking-tight focus:outline-hidden focus:ring-2 focus:ring-brand/30 transition-all group-hover:border-brand/40 placeholder:text-muted/30"
-/>
-              <span className="absolute right-5 top-1/2 -translate-y-1/2 text-muted-foreground font-display text-xl group-focus-within:text-brand transition-colors">KG</span>
+              <input
+                type="number"
+                value={weight}
+                onChange={(e) => setWeight(e.target.value)}
+                placeholder="000"
+                className="no-spinner w-full bg-surface border border-border rounded-xl px-5 py-4 text-3xl font-display tracking-tight focus:outline-hidden focus:ring-2 focus:ring-brand/30 transition-all group-hover:border-brand/40 placeholder:text-muted/30"
+              />
+              <span className="absolute right-5 top-1/2 -translate-y-1/2 text-muted-foreground font-display text-xl group-focus-within:text-brand transition-colors">
+                KG
+              </span>
             </div>
           </div>
         </div>
-        
+
         <button className="w-full bg-brand text-brand-foreground font-display text-xl py-5 rounded-xl hover:opacity-90 hover:scale-[1.01] active:scale-[0.99] transition-all flex items-center justify-center gap-3 shadow-[0_10px_20px_-10px_rgba(223,255,0,0.3)]">
           VERIFY & RECORD PERFORMANCE
           <ArrowUpRight size={22} />
         </button>
       </div>
-      
+
       <div className="bg-linear-to-r from-brand/5 to-transparent px-8 py-3 border-t border-border/50">
         <p className="text-[10px] font-mono text-muted-foreground/60 uppercase tracking-[0.2em]">
           All PRs are added to your global identity and verified by training volume.

@@ -32,7 +32,6 @@ export function FeedPage() {
           meta="2 hours ago"
           lift="Overhead Press"
           value="140 KG"
-          likes={120}
         />
 
         <WorkoutPost
@@ -41,7 +40,6 @@ export function FeedPage() {
           meta="4 hours ago • Late Night Push"
           volume="8,420 KG"
           duration="1H 12M"
-          likes={24}
           exercises={[
             { name: "Incline DB Bench", detail: "3 × 10 @ 32kg" },
             { name: "Weighted Dips", detail: "4 × 12 @ BW+15" },
@@ -55,7 +53,6 @@ export function FeedPage() {
           meta="6 hours ago • Morning Recovery"
           distance="6.4 KM"
           pace="5:12 /KM"
-          likes={10}
         />
 
         <PRPost
@@ -64,7 +61,6 @@ export function FeedPage() {
           meta="Yesterday"
           lift="Conventional Deadlift"
           value="172.5 KG"
-          likes={10}
         />
 
         <WorkoutPost
@@ -73,7 +69,6 @@ export function FeedPage() {
           meta="Yesterday • Heavy Pull"
           volume="11,240 KG"
           duration="1H 28M"
-          likes={41}
           exercises={[
             { name: "Deadlift", detail: "5 × 3 @ 180kg" },
             { name: "Pendlay Row", detail: "4 × 8 @ 90kg" },

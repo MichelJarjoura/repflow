@@ -1,4 +1,9 @@
 import avatar from "@/assets/avatar-1.jpg";
+import { WorkoutStats } from "@/features/workouts/components/WorkoutStats";
+import { PRPost } from "@/features/feed/components/posts/PRPost";
+import { WorkoutPost } from "@/features/feed/components/posts/WorkoutPost";
+import { RunPost } from "@/features/feed/components/posts/RunPost";
+import avatar1 from "@/assets/avatar-1.jpg";
 
 const prs = [
   { lift: "Bench Press", value: 125 },
@@ -9,19 +14,11 @@ const prs = [
   { lift: "Power Clean", value: 95 },
 ];
 
-const recent = [
-  { date: "Today", title: "Heavy Push", volume: "9.2T", duration: "1H 04M" },
-  { date: "Yesterday", title: "Heavy Pull", volume: "11.2T", duration: "1H 28M" },
-  { date: "Mon", title: "Legs", volume: "12.8T", duration: "1H 32M" },
-  { date: "Sun", title: "Recovery 6K", volume: "—", duration: "31:14" },
-  { date: "Fri", title: "Push Accessory", volume: "5.4T", duration: "0H 52M" },
-];
-
 export function ProfilePage() {
   return (
-    <main className="max-w-5xl mx-auto px-6 py-8 space-y-10">
+    <main className="max-w-5xl mx-auto px-6 py-8 space-y-12">
       {/* Identity header */}
-      <header className="bg-card border border-border rounded-xl overflow-hidden">
+      <header className="bg-card border border-border rounded-xl overflow-hidden shadow-sm">
         <div className="p-8 flex flex-col md:flex-row gap-8 items-start md:items-center border-b border-border">
           <img
             src={avatar}
@@ -41,12 +38,12 @@ export function ProfilePage() {
           </div>
           <button
             type="button"
-            className="bg-brand text-brand-foreground px-6 py-3 rounded-lg text-xs font-bold uppercase tracking-widest hover:brightness-95 transition-all"
+            className="bg-brand text-brand-foreground px-6 py-3 rounded-lg text-xs font-bold uppercase tracking-widest hover:brightness-95 transition-all shadow-[0_0_20px_-5px_rgba(223,255,0,0.4)]"
           >
             Follow
           </button>
         </div>
-        <div className="grid grid-cols-2 md:grid-cols-4 divide-x divide-border border-t border-border">
+        <div className="grid grid-cols-2 md:grid-cols-4 divide-x divide-border">
           <Metric label="SBD Total" value="495" unit="KG" />
           <Metric label="Streak" value="12" unit="DAYS" highlight />
           <Metric label="Vol / Wk" value="42.5" unit="TONS" />
@@ -54,15 +51,18 @@ export function ProfilePage() {
         </div>
       </header>
 
-      {/* PR grid */}
-      <section>
-        <div className="flex items-baseline justify-between mb-6">
-          <h2 className="font-display text-2xl tracking-tight">PERSONAL RECORDS</h2>
+      {/* Stats Section */}
+      <section className="space-y-6">
+        <div className="flex items-baseline justify-between">
+          <h2 className="font-display text-3xl tracking-tight">GYM PERFORMANCE</h2>
           <span className="text-[10px] font-mono text-muted-foreground uppercase tracking-widest">
-            ALL-TIME BESTS
+            Data Verified
           </span>
         </div>
-        <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+
+        <WorkoutStats />
+
+        <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mt-8">
           {prs.map((p) => (
             <div
               key={p.lift}
@@ -80,46 +80,63 @@ export function ProfilePage() {
         </div>
       </section>
 
-      {/* Volume sparkline */}
-      <section className="bg-card border border-border rounded-xl p-6">
-        <div className="flex items-baseline justify-between mb-6">
-          <h2 className="font-display text-2xl tracking-tight">WEEKLY VOLUME</h2>
-          <span className="text-[10px] font-mono text-brand uppercase tracking-widest">
-            +8.3% MoM
+      {/* Shared Posts Section */}
+      <section className="space-y-8">
+        <div className="flex items-baseline justify-between border-b border-border pb-4">
+          <h2 className="font-display text-3xl tracking-tight">SHARED POSTS</h2>
+          <span className="text-[10px] font-mono text-muted-foreground uppercase tracking-widest">
+            Activity Feed
           </span>
         </div>
-        <div className="h-32 flex items-end gap-2">
-          {[38, 42, 35, 51, 44, 48, 56, 52, 49, 61, 58, 65].map((h, i) => (
-            <div key={i} className="flex-1 flex flex-col items-center gap-1">
-              <div
-                className={`w-full rounded-sm ${i === 11 ? "bg-brand" : "bg-elevated"}`}
-                style={{ height: `${h * 1.5}%` }}
-              />
-              <span className="text-[9px] font-mono text-muted-foreground">W{i + 1}</span>
-            </div>
-          ))}
-        </div>
-      </section>
 
-      {/* Recent sessions */}
-      <section>
-        <div className="flex items-baseline justify-between mb-6">
-          <h2 className="font-display text-2xl tracking-tight">RECENT SESSIONS</h2>
-        </div>
-        <div className="bg-card border border-border rounded-xl divide-y divide-border">
-          {recent.map((r) => (
-            <div
-              key={r.date + r.title}
-              className="grid grid-cols-12 gap-4 p-5 items-center hover:bg-elevated/30 transition-colors cursor-pointer"
-            >
-              <span className="col-span-2 text-[10px] font-mono uppercase text-muted-foreground tracking-widest">
-                {r.date}
-              </span>
-              <span className="col-span-5 italic">{r.title}</span>
-              <span className="col-span-3 font-mono text-sm text-muted-foreground">{r.volume}</span>
-              <span className="col-span-2 font-mono text-sm text-right">{r.duration}</span>
-            </div>
-          ))}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+          <div className="space-y-8">
+            <PRPost
+              avatar={avatar1}
+              name="Marcus Thorne"
+              meta="2 hours ago"
+              lift="Overhead Press"
+              value="140 KG"
+            />
+
+            <WorkoutPost
+              avatar={avatar1}
+              name="Marcus Thorne"
+              meta="Yesterday • Heavy Pull"
+              volume="11,240 KG"
+              duration="1H 28M"
+              exercises={[
+                { name: "Deadlift", detail: "5 × 3 @ 180kg" },
+                { name: "Pendlay Row", detail: "4 × 8 @ 90kg" },
+                { name: "Weighted Pull-ups", detail: "4 × 6 @ BW+25" },
+                { name: "Hammer Curls", detail: "3 × 12 @ 18kg" },
+              ]}
+            />
+          </div>
+
+          <div className="space-y-8">
+            <RunPost
+              avatar={avatar1}
+              name="Marcus Thorne"
+              meta="3 days ago • Morning Recovery"
+              distance="8.2 KM"
+              pace="4:58 /KM"
+            />
+
+            <WorkoutPost
+              avatar={avatar1}
+              name="Marcus Thorne"
+              meta="5 days ago • Leg Day"
+              volume="14,800 KG"
+              duration="1H 42M"
+              exercises={[
+                { name: "Back Squat", detail: "4 × 8 @ 140kg" },
+                { name: "Leg Press", detail: "3 × 12 @ 280kg" },
+                { name: "RDL", detail: "3 × 10 @ 100kg" },
+                { name: "Calf Raises", detail: "4 × 15 @ 120kg" },
+              ]}
+            />
+          </div>
         </div>
       </section>
     </main>

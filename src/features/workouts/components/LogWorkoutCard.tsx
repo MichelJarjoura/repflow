@@ -27,7 +27,7 @@ export function LogWorkoutCard() {
           </button>
         </div>
       </div>
-      
+
       <div className="bg-surface/40 px-6 py-3 border-t border-border flex justify-between items-center text-[10px] font-mono text-muted-foreground uppercase tracking-widest">
         <span>Quick Actions</span>
         <button className="text-brand hover:underline font-bold">Manage Templates →</button>

@@ -44,7 +44,7 @@ export function WorkoutsPage() {
           <div className="flex items-center justify-between mb-2">
             <h2 className="font-display text-2xl tracking-tight">LIFTING PERFORMANCE</h2>
           </div>
-          
+
           <div className="bg-card border border-border rounded-xl p-6 space-y-8">
             {/* PR Progress Section */}
             <div>
@@ -54,9 +54,14 @@ export function WorkoutsPage() {
                 </span>
                 <span className="text-[10px] font-mono text-brand">TOP 3 LIFTS</span>
               </div>
-              
+
               <div className="space-y-6">
-                <LiftProgress label="Conventional Deadlift" current={210} previous={205} color="brand" />
+                <LiftProgress
+                  label="Conventional Deadlift"
+                  current={210}
+                  previous={205}
+                  color="brand"
+                />
                 <LiftProgress label="Back Squat" current={165} previous={160} color="brand" />
                 <LiftProgress label="Bench Press" current={125} previous={125} color="muted" />
               </div>
@@ -64,27 +69,39 @@ export function WorkoutsPage() {
 
             {/* Heavy Volume Intensity */}
             <div className="pt-8 border-t border-border">
-              <h4 className="text-[10px] font-mono text-muted-foreground uppercase tracking-widest mb-4">Strength Intensity</h4>
+              <h4 className="text-[10px] font-mono text-muted-foreground uppercase tracking-widest mb-4">
+                Strength Intensity
+              </h4>
               <div className="space-y-4">
                 <div className="flex justify-between items-end">
                   <div className="space-y-1">
-                    <p className="text-[10px] text-muted-foreground uppercase tracking-widest">Avg. Intensity</p>
+                    <p className="text-[10px] text-muted-foreground uppercase tracking-widest">
+                      Avg. Intensity
+                    </p>
                     <p className="text-3xl font-display">84%</p>
                   </div>
                   <div className="text-right space-y-1">
-                    <p className="text-[10px] text-muted-foreground uppercase tracking-widest">PR Frequency</p>
+                    <p className="text-[10px] text-muted-foreground uppercase tracking-widest">
+                      PR Frequency
+                    </p>
                     <p className="text-xl font-display text-brand">2.4 / MO</p>
                   </div>
                 </div>
-                
+
                 <div className="grid grid-cols-2 gap-3 pt-2">
                   <div className="bg-surface/60 p-4 rounded-xl border border-white/5 group hover:border-brand/30 transition-colors">
-                    <p className="text-[10px] text-muted-foreground uppercase tracking-widest mb-1">Total PRs</p>
+                    <p className="text-[10px] text-muted-foreground uppercase tracking-widest mb-1">
+                      Total PRs
+                    </p>
                     <p className="text-2xl font-display">48</p>
                   </div>
                   <div className="bg-surface/60 p-4 rounded-xl border border-white/5 group hover:border-brand/30 transition-colors">
-                    <p className="text-[10px] text-muted-foreground uppercase tracking-widest mb-1">Max Load</p>
-                    <p className="text-2xl font-display text-brand">210<span className="text-sm ml-1">KG</span></p>
+                    <p className="text-[10px] text-muted-foreground uppercase tracking-widest mb-1">
+                      Max Load
+                    </p>
+                    <p className="text-2xl font-display text-brand">
+                      210<span className="text-sm ml-1">KG</span>
+                    </p>
                   </div>
                 </div>
               </div>
@@ -92,12 +109,14 @@ export function WorkoutsPage() {
 
             {/* Recent PR Activity Log */}
             <div className="pt-6 border-t border-border">
-               <h4 className="text-[10px] font-mono text-muted-foreground uppercase tracking-widest mb-4">Milestones</h4>
-               <div className="space-y-3">
-                 <MilestoneItem lift="Deadlift" weight="210kg" date="2 days ago" />
-                 <MilestoneItem lift="Back Squat" weight="165kg" date="1 week ago" />
-                 <MilestoneItem lift="Overhead Press" weight="85kg" date="3 weeks ago" />
-               </div>
+              <h4 className="text-[10px] font-mono text-muted-foreground uppercase tracking-widest mb-4">
+                Milestones
+              </h4>
+              <div className="space-y-3">
+                <MilestoneItem lift="Deadlift" weight="210kg" date="2 days ago" />
+                <MilestoneItem lift="Back Squat" weight="165kg" date="1 week ago" />
+                <MilestoneItem lift="Overhead Press" weight="85kg" date="3 weeks ago" />
+              </div>
             </div>
           </div>
         </aside>
@@ -106,7 +125,17 @@ export function WorkoutsPage() {
   );
 }
 
-function LiftProgress({ label, current, previous, color }: { label: string; current: number; previous: number; color: 'brand' | 'muted' }) {
+function LiftProgress({
+  label,
+  current,
+  previous,
+  color,
+}: {
+  label: string;
+  current: number;
+  previous: number;
+  color: "brand" | "muted";
+}) {
   const diff = current - previous;
   return (
     <div className="space-y-2">
@@ -115,14 +144,12 @@ function LiftProgress({ label, current, previous, color }: { label: string; curr
           <p className="text-xs text-foreground/80 mb-0.5">{label}</p>
           <p className="text-2xl font-display tracking-tight">{current} KG</p>
         </div>
-        {diff > 0 && (
-          <span className="text-[10px] font-mono text-brand mb-1">+{diff} KG</span>
-        )}
+        {diff > 0 && <span className="text-[10px] font-mono text-brand mb-1">+{diff} KG</span>}
       </div>
       <div className="h-1.5 w-full bg-elevated rounded-full overflow-hidden">
-        <div 
-          className={`h-full transition-all duration-700 ${color === 'brand' ? 'bg-brand' : 'bg-muted-foreground/30'}`} 
-          style={{ width: `${(current / 250) * 100}%` }} 
+        <div
+          className={`h-full transition-all duration-700 ${color === "brand" ? "bg-brand" : "bg-muted-foreground/30"}`}
+          style={{ width: `${(current / 250) * 100}%` }}
         />
       </div>
     </div>
@@ -144,7 +171,17 @@ function MilestoneItem({ lift, weight, date }: { lift: string; weight: string; d
   );
 }
 
-function StatMini({ label, value, icon, trend }: { label: string; value: string; icon: React.ReactNode; trend?: 'up' | 'down' }) {
+function StatMini({
+  label,
+  value,
+  icon,
+  trend,
+}: {
+  label: string;
+  value: string;
+  icon: React.ReactNode;
+  trend?: "up" | "down";
+}) {
   return (
     <div className="flex flex-col items-start gap-1">
       <div className="flex items-center gap-1.5 text-[10px] font-mono text-muted-foreground uppercase tracking-widest">
@@ -152,7 +189,7 @@ function StatMini({ label, value, icon, trend }: { label: string; value: string;
       </div>
       <div className="flex items-center gap-2">
         <span className="text-2xl font-display tracking-tight">{value}</span>
-        {trend === 'up' && <span className="size-1.5 rounded-full bg-brand animate-pulse" />}
+        {trend === "up" && <span className="size-1.5 rounded-full bg-brand animate-pulse" />}
       </div>
     </div>
   );
@@ -163,12 +200,14 @@ function RecoveryItem({ label, progress }: { label: string; progress: number }) 
     <div className="space-y-1.5">
       <div className="flex justify-between text-[10px] font-mono">
         <span className="text-foreground/80">{label}</span>
-        <span className={progress < 30 ? 'text-destructive' : 'text-muted-foreground'}>{progress}%</span>
+        <span className={progress < 30 ? "text-destructive" : "text-muted-foreground"}>
+          {progress}%
+        </span>
       </div>
       <div className="h-1 w-full bg-elevated rounded-full overflow-hidden">
-        <div 
-          className={`h-full transition-all duration-500 ${progress < 30 ? 'bg-destructive' : 'bg-brand'}`} 
-          style={{ width: `${progress}%` }} 
+        <div
+          className={`h-full transition-all duration-500 ${progress < 30 ? "bg-destructive" : "bg-brand"}`}
+          style={{ width: `${progress}%` }}
         />
       </div>
     </div>

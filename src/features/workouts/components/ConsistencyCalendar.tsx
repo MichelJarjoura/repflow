@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useMemo } from "react";
 
 export function ConsistencyCalendar() {
   // Generate mock data for the last 52 weeks
@@ -21,11 +21,15 @@ export function ConsistencyCalendar() {
       <div className="flex justify-between items-center mb-6">
         <div>
           <h3 className="font-display text-lg tracking-tight">GYM CONSISTENCY</h3>
-          <p className="text-[10px] font-mono text-muted-foreground uppercase tracking-widest">Training frequency over the past year</p>
+          <p className="text-[10px] font-mono text-muted-foreground uppercase tracking-widest">
+            Training frequency over the past year
+          </p>
         </div>
         <div className="flex items-center gap-4">
           <div className="flex items-center gap-1.5">
-            <span className="text-[10px] font-mono text-muted-foreground uppercase tracking-widest">Less</span>
+            <span className="text-[10px] font-mono text-muted-foreground uppercase tracking-widest">
+              Less
+            </span>
             <div className="flex gap-1">
               <div className="size-2.5 rounded-sm bg-elevated" />
               <div className="size-2.5 rounded-sm bg-brand/20" />
@@ -33,7 +37,9 @@ export function ConsistencyCalendar() {
               <div className="size-2.5 rounded-sm bg-brand/80" />
               <div className="size-2.5 rounded-sm bg-brand" />
             </div>
-            <span className="text-[10px] font-mono text-muted-foreground uppercase tracking-widest">More</span>
+            <span className="text-[10px] font-mono text-muted-foreground uppercase tracking-widest">
+              More
+            </span>
           </div>
         </div>
       </div>
@@ -53,7 +59,7 @@ export function ConsistencyCalendar() {
           ))}
         </div>
       </div>
-      
+
       <div className="mt-4 flex justify-between items-center text-[10px] font-mono text-muted-foreground uppercase tracking-widest">
         <span>342 Total Sessions</span>
         <span>Current Streak: 12 Days</span>
@@ -64,11 +70,17 @@ export function ConsistencyCalendar() {
 
 function getIntensityClass(level: number) {
   switch (level) {
-    case 0: return 'bg-elevated';
-    case 1: return 'bg-brand/20';
-    case 2: return 'bg-brand/50';
-    case 3: return 'bg-brand/80';
-    case 4: return 'bg-brand';
-    default: return 'bg-elevated';
+    case 0:
+      return "bg-elevated";
+    case 1:
+      return "bg-brand/20";
+    case 2:
+      return "bg-brand/50";
+    case 3:
+      return "bg-brand/80";
+    case 4:
+      return "bg-brand";
+    default:
+      return "bg-elevated";
   }
 }

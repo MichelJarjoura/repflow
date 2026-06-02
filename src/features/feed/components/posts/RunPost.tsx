@@ -1,7 +1,6 @@
-import { MessageCircle, Send } from "lucide-react";
-import { IconButton, LikeButton } from "../IconButton";
-import { PostHeader } from "../PostHeader";
+import { PostHeader } from "./post-components/PostHeader";
 import routeImg from "@/assets/run-route.jpg";
+import PostFooter from "./post-components/PostFooter";
 
 type Props = {
   avatar: string;
@@ -9,10 +8,9 @@ type Props = {
   meta: string;
   distance: string;
   pace: string;
-  likes: number;
 };
 
-export function RunPost({ avatar, name, meta, distance, pace, likes }: Props) {
+export function RunPost({ avatar, name, meta, distance, pace }: Props) {
   return (
     <article className="bg-card border border-border rounded-xl overflow-hidden">
       <PostHeader avatar={avatar} name={name} meta={meta} bordered={false} />
@@ -30,17 +28,7 @@ export function RunPost({ avatar, name, meta, distance, pace, likes }: Props) {
           <Stat label="Pace" value={pace} />
         </div>
       </div>
-      <div className="p-4 bg-surface/40 flex items-center gap-4">
-        <LikeButton likes={likes} />
-
-        <IconButton>
-          <MessageCircle size={20} />
-        </IconButton>
-
-        <IconButton>
-          <Send size={20} />
-        </IconButton>
-      </div>
+      <PostFooter/>
     </article>
   );
 }
