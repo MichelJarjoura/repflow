@@ -10,14 +10,8 @@ import avatar3 from "@/assets/avatar-3.jpg";
 
 export function FeedPage() {
   return (
-    <main className="max-w-5xl mx-auto px-6 py-8 grid grid-cols-1 lg:grid-cols-12 gap-8">
-      <div className="lg:col-span-3 order-2 lg:order-1">
-        <div className="lg:sticky lg:top-24">
-          <IdentityCard />
-        </div>
-      </div>
-
-      <section className="lg:col-span-6 order-1 lg:order-2 space-y-6">
+    <div className="max-w-6xl mx-auto px-6 py-8 grid grid-cols-1 lg:grid-cols-12 gap-8">
+      <section className="lg:col-span-8 space-y-6">
         <div className="hidden lg:block">
           <h1 className="font-display text-4xl tracking-tight mb-1">FEED</h1>
           <p className="text-xs font-mono text-muted-foreground uppercase tracking-widest">
@@ -78,11 +72,12 @@ export function FeedPage() {
         />
       </section>
 
-      <div className="lg:col-span-3 order-3">
-        <div className="lg:sticky lg:top-24">
+      <div className="lg:col-span-4 hidden lg:block">
+        <div className="sticky top-8 space-y-6">
+          <IdentityCard />
           <RightRail />
         </div>
       </div>
-    </main>
+    </div>
   );
 }

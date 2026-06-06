@@ -1,8 +1,7 @@
 import { Heart, MessageCircle, Send } from "lucide-react";
 import { useState } from "react";
 
-
-export function LikeButton({ likes }: {likes:number}) {
+export function LikeButton({ likes }: { likes: number }) {
   const [liked, setLiked] = useState(false);
   const [likeCount, setLikeCount] = useState(likes);
 
@@ -38,10 +37,10 @@ export function LikeButton({ likes }: {likes:number}) {
   );
 }
 
-
-export function CommentButton({ comments }: { comments: number }) {
+export function CommentButton({ comments, onClick }: { comments: number; onClick?: () => void }) {
   return (
     <button
+      onClick={onClick}
       className={`
           flex items-center gap-2
           px-3 py-2 rounded-xl

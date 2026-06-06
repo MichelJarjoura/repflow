@@ -1,5 +1,4 @@
-import { createFileRoute, Outlet } from "@tanstack/react-router";
-import { AppNav, FloatingLogButton } from "@/shared/components/AppNav";
+import { createFileRoute } from "@tanstack/react-router";
 
 export const Route = createFileRoute("/")({
   head: () => ({
