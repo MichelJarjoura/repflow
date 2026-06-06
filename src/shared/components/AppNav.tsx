@@ -127,6 +127,3 @@ export function AppNav() {
   );
 }
 
-export function FloatingLogButton() {
-  return null; // Integrated into Nav
-}

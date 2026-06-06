@@ -1,24 +1,10 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, redirect } from "@tanstack/react-router";
 
 export const Route = createFileRoute("/")({
-  head: () => ({
-    meta: [
-      { title: "REPFLOW" },
-      {
-        name: "description",
-        content:
-          "The progress-first feed for lifters. PRs, workouts, runs from the athletes you follow.",
-      },
-      { property: "og:title", content: "REPFLOW" },
-      {
-        property: "og:description",
-        content: "The progress-first feed for lifters. PRs, workouts, runs.",
-      },
-    ],
-  }),
-  component: Index,
+  beforeLoad: () => {
+    throw redirect({
+      to: "/feed",
+      replace: true,
+    });
+  },
 });
-
-function Index() {
-  return <div className="min-h-screen bg-surface text-foreground"></div>;
-}
