@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Link, useRouterState } from "@tanstack/react-router";
+import { Link, useRouterState, useNavigate } from "@tanstack/react-router";
 import {
   Home,
   Dumbbell,
@@ -9,28 +9,60 @@ import {
   Search,
   Bell,
   MoreHorizontal,
+  LogIn,
+  LogOut,
+  Settings,
 } from "lucide-react";
 import avatar from "@/assets/avatar-1.jpg";
 import { LogWorkoutModal } from "./LogWorkoutModal";
+import { useAuth } from "@/features/auth/AuthContext";
+import { AuthModal } from "@/features/auth/components/AuthModal";
+import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
 
 const links = [
-  { to: "/feed", label: "Feed", icon: Home },
-  { to: "/workouts", label: "Workouts", icon: Dumbbell },
-  { to: "/runs", label: "Runs", icon: Activity },
-  { to: "/profile", label: "Profile", icon: User },
+  { to: "/feed", label: "Feed", icon: Home, public: true },
+  { to: "/workouts", label: "Workouts", icon: Dumbbell, public: false },
+  { to: "/runs", label: "Runs", icon: Activity, public: false },
+  { to: "/profile", label: "Profile", icon: User, public: false },
 ] as const;
 
 export function AppNav() {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const [isLogModalOpen, setIsLogModalOpen] = useState(false);
+  const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
+  const { user, isAuthenticated, logout } = useAuth();
+  const navigate = useNavigate();
+
+  const handleLinkClick = (e: React.MouseEvent, to: string, isPublic: boolean) => {
+    if (!isPublic && !isAuthenticated) {
+      e.preventDefault();
+      setIsAuthModalOpen(true);
+    }
+  };
+
+  const handleLogWorkout = () => {
+    if (!isAuthenticated) {
+      setIsAuthModalOpen(true);
+    } else {
+      setIsLogModalOpen(true);
+    }
+  };
 
   return (
     <>
       {/* Mobile Top Bar (Logo Only) */}
-      <div className="md:hidden sticky top-0 z-50 bg-background/80 backdrop-blur-md border-b border-border h-14 flex items-center px-4">
+      <div className="md:hidden sticky top-0 z-50 bg-background/80 backdrop-blur-md border-b border-border h-14 flex items-center justify-between px-4">
         <Link to="/" className="font-display text-xl tracking-tighter text-brand">
           REP<span className="text-white">FLOW</span>
         </Link>
+        {!isAuthenticated && (
+          <button
+            onClick={() => setIsAuthModalOpen(true)}
+            className="text-xs font-bold bg-brand text-brand-foreground px-3 py-1.5 rounded-full"
+          >
+            SIGN IN
+          </button>
+        )}
       </div>
 
       {/* Sidebar (Desktop) */}
@@ -50,10 +82,11 @@ export function AppNav() {
               <Link
                 key={l.to}
                 to={l.to}
+                onClick={(e) => handleLinkClick(e, l.to, l.public)}
                 className={`flex items-center gap-4 p-3 rounded-full transition-colors ${
                   active
                     ? "font-bold text-foreground"
-                    : "text-stone-400 hover:bg-elevated hover:text-foreground"
+                    : "text-muted-foreground hover:bg-elevated hover:text-foreground"
                 }`}
               >
                 <Icon size={26} strokeWidth={active ? 2.5 : 2} />
@@ -62,18 +95,21 @@ export function AppNav() {
             );
           })}
 
-          <button className="flex items-center gap-4 p-3 rounded-full text-stone-400 hover:bg-elevated hover:text-foreground transition-colors mt-2">
+          <button className="flex items-center gap-4 p-3 rounded-full text-muted-foreground hover:bg-elevated hover:text-foreground transition-colors mt-2">
             <Search size={26} />
             <span className="text-lg xl:inline hidden">Search</span>
           </button>
 
-          <button className="flex items-center gap-4 p-3 rounded-full text-stone-400 hover:bg-elevated hover:text-foreground transition-colors">
+          <button 
+            onClick={() => !isAuthenticated && setIsAuthModalOpen(true)}
+            className="flex items-center gap-4 p-3 rounded-full text-muted-foreground hover:bg-elevated hover:text-foreground transition-colors"
+          >
             <Bell size={26} />
             <span className="text-lg xl:inline hidden">Notifications</span>
           </button>
 
           <button
-            onClick={() => setIsLogModalOpen(true)}
+            onClick={handleLogWorkout}
             className="mt-4 bg-brand text-brand-foreground rounded-full p-3 xl:px-8 xl:py-4 flex items-center justify-center font-bold text-lg hover:opacity-90 transition-opacity w-full"
           >
             <PlusSquare className="xl:hidden" size={26} />
@@ -82,18 +118,61 @@ export function AppNav() {
         </div>
 
         <div className="mt-auto pt-4 border-t border-border/50">
-          <button className="flex items-center gap-3 p-3 w-full rounded-full hover:bg-elevated transition-colors">
-            <div className="size-10 rounded-full bg-elevated outline outline-white/10 overflow-hidden shrink-0">
-              <img src={avatar} alt="Your profile" className="w-full h-full object-cover" />
-            </div>
-            <div className="hidden xl:flex flex-col items-start text-sm overflow-hidden">
-              <span className="font-bold text-foreground truncate w-full text-left">
-                Alex Rivera
-              </span>
-              <span className="text-stone-500 truncate w-full text-left">@arivera_lifts</span>
-            </div>
-            <MoreHorizontal size={20} className="hidden xl:block ml-auto text-stone-500" />
-          </button>
+          {isAuthenticated ? (
+            <DropdownMenu.Root>
+              <DropdownMenu.Trigger asChild>
+                <button className="flex items-center gap-3 p-3 w-full rounded-full hover:bg-elevated transition-colors outline-none group text-left">
+                  <div className="size-10 rounded-full bg-elevated outline outline-white/10 overflow-hidden shrink-0">
+                    <img src={user?.avatar || avatar} alt="Your profile" className="w-full h-full object-cover" />
+                  </div>
+                  <div className="hidden xl:flex flex-col items-start text-sm overflow-hidden">
+                    <span className="font-bold text-foreground truncate w-full">
+                      {user?.name}
+                    </span>
+                    <span className="text-muted-foreground truncate w-full">{user?.username}</span>
+                  </div>
+                  <MoreHorizontal size={20} className="hidden xl:block ml-auto text-muted-foreground group-hover:text-white" />
+                </button>
+              </DropdownMenu.Trigger>
+
+              <DropdownMenu.Portal>
+                <DropdownMenu.Content
+                  className="w-56 bg-elevated border border-border rounded-xl p-2 shadow-2xl z-[100] animate-in fade-in zoom-in-95 duration-150"
+                  side="top"
+                  align="start"
+                  sideOffset={10}
+                >
+                  <DropdownMenu.Item className="flex items-center gap-3 p-3 rounded-lg hover:bg-white/5 outline-none cursor-pointer transition-colors text-muted-foreground hover:text-white">
+                    <User size={18} />
+                    <span className="font-medium">Profile</span>
+                  </DropdownMenu.Item>
+                  <DropdownMenu.Item className="flex items-center gap-3 p-3 rounded-lg hover:bg-white/5 outline-none cursor-pointer transition-colors text-muted-foreground hover:text-white">
+                    <Settings size={18} />
+                    <span className="font-medium">Settings</span>
+                  </DropdownMenu.Item>
+                  <DropdownMenu.Separator className="h-px bg-border my-1" />
+                  <DropdownMenu.Item 
+                    onClick={() => logout()}
+                    className="flex items-center gap-3 p-3 rounded-lg hover:bg-red-500/10 outline-none cursor-pointer transition-colors text-red-400 hover:text-red-500"
+                  >
+                    <LogOut size={18} />
+                    <span className="font-medium">Log out {user?.username}</span>
+                  </DropdownMenu.Item>
+                </DropdownMenu.Content>
+              </DropdownMenu.Portal>
+            </DropdownMenu.Root>
+          ) : (
+            <button
+              onClick={() => setIsAuthModalOpen(true)}
+              className="flex items-center gap-4 p-4 w-full rounded-full bg-elevated hover:bg-white/10 transition-all border border-white/5"
+            >
+              <LogIn size={24} className="text-brand shrink-0" />
+              <div className="hidden xl:flex flex-col items-start text-sm">
+                <span className="font-bold text-foreground">Sign In</span>
+                <span className="text-muted-foreground">Join the community</span>
+              </div>
+            </button>
+          )}
         </div>
       </nav>
 
@@ -106,8 +185,9 @@ export function AppNav() {
             <Link
               key={l.to}
               to={l.to}
+              onClick={(e) => handleLinkClick(e, l.to, l.public)}
               className={`flex flex-col items-center justify-center w-full h-full ${
-                active ? "text-brand" : "text-stone-500"
+                active ? "text-brand" : "text-muted-foreground"
               }`}
             >
               <Icon size={24} strokeWidth={active ? 2.5 : 2} />
@@ -115,14 +195,15 @@ export function AppNav() {
           );
         })}
         <button
-          onClick={() => setIsLogModalOpen(true)}
-          className="flex flex-col items-center justify-center w-full h-full text-stone-500"
+          onClick={handleLogWorkout}
+          className="flex flex-col items-center justify-center w-full h-full text-muted-foreground"
         >
           <PlusSquare size={24} />
         </button>
       </nav>
 
       <LogWorkoutModal open={isLogModalOpen} onOpenChange={setIsLogModalOpen} />
+      <AuthModal open={isAuthModalOpen} onOpenChange={setIsAuthModalOpen} />
     </>
   );
 }

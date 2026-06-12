@@ -10,6 +10,7 @@ import {
 
 import appCss from "../styles.css?url";
 import { AppNav } from "@/shared/components/AppNav";
+import { AuthProvider, useAuth } from "@/features/auth/AuthContext";
 
 function NotFoundComponent() {
   return (
@@ -68,7 +69,12 @@ function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
   );
 }
 
-export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()({
+interface MyRouterContext {
+  queryClient: QueryClient;
+  auth?: ReturnType<typeof useAuth>;
+}
+
+export const Route = createRootRouteWithContext<MyRouterContext>()({
   head: () => ({
     meta: [
       { charSet: "utf-8" },
@@ -116,7 +122,7 @@ function RootShell({ children }: { children: React.ReactNode }) {
         <HeadContent />
       </head>
       <body>
-        {children}
+        <AuthProvider>{children}</AuthProvider>
         <Scripts />
       </body>
     </html>
@@ -124,6 +130,7 @@ function RootShell({ children }: { children: React.ReactNode }) {
 }
 
 function RootComponent() {
+  const auth = useAuth();
   const { queryClient } = Route.useRouteContext();
 
   return (
@@ -131,7 +138,7 @@ function RootComponent() {
       <div className="min-h-screen bg-background text-foreground flex flex-col md:flex-row">
         <AppNav />
         <div className="flex-1 md:pl-20 xl:pl-64 pb-16 md:pb-0">
-          <Outlet />
+          <Outlet context={{ auth, queryClient }} />
         </div>
       </div>
     </QueryClientProvider>

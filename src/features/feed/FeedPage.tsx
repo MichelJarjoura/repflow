@@ -7,8 +7,15 @@ import { FeedFilter } from "./components/FeedFilter";
 import avatar1 from "@/assets/avatar-1.jpg";
 import avatar2 from "@/assets/avatar-2.jpg";
 import avatar3 from "@/assets/avatar-3.jpg";
+import { useAuth } from "@/features/auth/AuthContext";
+import { AuthModal } from "@/features/auth/components/AuthModal";
+import { useState } from "react";
+import { PlusCircle } from "lucide-react";
 
 export function FeedPage() {
+  const { isAuthenticated } = useAuth();
+  const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
+
   return (
     <div className="max-w-6xl mx-auto px-6 py-8 grid grid-cols-1 lg:grid-cols-12 gap-8">
       <section className="lg:col-span-8 space-y-6">
@@ -18,6 +25,27 @@ export function FeedPage() {
             Progress &middot; Not Entertainment
           </p>
         </div>
+
+        {!isAuthenticated && (
+          <div className="bg-brand/5 border border-brand/20 rounded-2xl p-6 flex flex-col md:flex-row items-center justify-between gap-6 animate-in fade-in slide-in-from-top-4 duration-500">
+            <div className="flex items-center gap-4">
+              <div className="size-12 rounded-full bg-brand/20 flex items-center justify-center text-brand shrink-0">
+                <PlusCircle size={28} />
+              </div>
+              <div>
+                <h3 className="font-display text-xl tracking-tight text-foreground uppercase">Share your progress</h3>
+                <p className="text-muted-foreground text-sm">Join the community to log your own workouts and PRs.</p>
+              </div>
+            </div>
+            <button 
+              onClick={() => setIsAuthModalOpen(true)}
+              className="bg-brand text-brand-foreground font-bold px-8 py-3 rounded-full hover:opacity-90 transition-opacity whitespace-nowrap"
+            >
+              Get Started
+            </button>
+          </div>
+        )}
+
         <FeedFilter />
 
         <PRPost
@@ -78,6 +106,7 @@ export function FeedPage() {
           <RightRail />
         </div>
       </div>
+      <AuthModal open={isAuthModalOpen} onOpenChange={setIsAuthModalOpen} defaultView="signup" />
     </div>
   );
 }

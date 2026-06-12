@@ -11,8 +11,8 @@ export function LogWorkoutModal({
   return (
     <Dialog.Root open={open} onOpenChange={onOpenChange}>
       <Dialog.Portal>
-        <Dialog.Overlay className="fixed inset-0 bg-background/80 backdrop-blur-sm z-[100] animate-in fade-in duration-200" />
-        <Dialog.Content className="fixed left-[50%] top-[50%] translate-x-[-50%] translate-y-[-50%] w-full max-w-lg bg-card border border-border p-0 shadow-2xl rounded-2xl z-[101] animate-in zoom-in-95 fade-in duration-200">
+        <Dialog.Overlay className="fixed inset-0 bg-background/80 backdrop-blur-sm z-100 animate-in fade-in duration-200" />
+        <Dialog.Content className="fixed left-[50%] top-[50%] translate-x-[-50%] translate-y-[-50%] w-full max-w-lg bg-card border border-border p-0 shadow-2xl rounded-2xl z-101 animate-in zoom-in-95 fade-in duration-200">
           <div className="flex items-center justify-between p-6 border-b border-border">
             <div>
               <Dialog.Title className="font-display text-2xl tracking-tight">

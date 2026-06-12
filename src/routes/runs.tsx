@@ -1,7 +1,17 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, redirect } from "@tanstack/react-router";
 import { RunsPage } from "@/features/runs";
 
 export const Route = createFileRoute("/runs")({
+  beforeLoad: () => {
+    if (typeof window !== "undefined") {
+      const storedUser = localStorage.getItem("repflow_user");
+      if (!storedUser) {
+        throw redirect({
+          to: "/feed",
+        });
+      }
+    }
+  },
   head: () => ({
     meta: [
       { title: "REPFLOW — Runs" },

@@ -1,7 +1,19 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, redirect } from "@tanstack/react-router";
 import { ProfilePage } from "@/features/profile";
 
 export const Route = createFileRoute("/profile")({
+  beforeLoad: ({ context }) => {
+    // If we're on the client and not authenticated, redirect
+    // Note: context.auth is injected in __root.tsx
+    if (typeof window !== "undefined") {
+      const storedUser = localStorage.getItem("repflow_user");
+      if (!storedUser) {
+        throw redirect({
+          to: "/feed",
+        });
+      }
+    }
+  },
   head: () => ({
     meta: [
       { title: "REPFLOW — Profile" },
