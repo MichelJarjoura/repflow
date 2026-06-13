@@ -40,7 +40,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     
     const mockUser: User = {
       id: "1",
-      name: "Alex Rivera",
+      name: "Michel Jarjoura",
       username: username.startsWith("@") ? username : `@${username}`,
       avatar: "/src/assets/avatar-1.jpg",
     };

@@ -1,14 +1,14 @@
 import { IdentityCard } from "./components/IdentityCard";
-import { PRPost } from "./components/posts/views/PRPost";
-import { WorkoutPost } from "./components/posts/views/WorkoutPost";
-import { RunPost } from "./components/posts/views/RunPost";
+import { PRPost } from "../../shared/posts/views/PRPost";
+import { WorkoutPost } from "../../shared/posts/views/WorkoutPost";
+import { RunPost } from "../../shared/posts/views/RunPost";
 import { RightRail } from "./components/RightRail";
 import { FeedFilter } from "./components/FeedFilter";
 import avatar1 from "@/assets/avatar-1.jpg";
 import avatar2 from "@/assets/avatar-2.jpg";
 import avatar3 from "@/assets/avatar-3.jpg";
-import { useAuth } from "@/features/auth/AuthContext";
-import { AuthModal } from "@/features/auth/components/AuthModal";
+import { useAuth } from "@/core/auth/AuthContext";
+import { AuthModal } from "@/core/auth/components/AuthModal";
 import { useState } from "react";
 import { PlusCircle } from "lucide-react";
 

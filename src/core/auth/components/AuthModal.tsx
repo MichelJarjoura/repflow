@@ -28,8 +28,8 @@ export function AuthModal({ open, onOpenChange, defaultView = "login" }: AuthMod
   return (
     <Dialog.Root open={open} onOpenChange={onOpenChange}>
       <Dialog.Portal>
-        <Dialog.Overlay className="fixed inset-0 bg-background/80 backdrop-blur-sm z-[100] animate-in fade-in duration-300" />
-        <Dialog.Content className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-md bg-elevated border border-border p-8 rounded-2xl shadow-2xl z-[101] animate-in zoom-in-95 slide-in-from-bottom-4 duration-300">
+        <Dialog.Overlay className="fixed inset-0 bg-background/80 backdrop-blur-sm z-100 animate-in fade-in duration-300" />
+        <Dialog.Content className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-md bg-elevated border border-border p-8 rounded-2xl shadow-2xl z-101 animate-in zoom-in-95 slide-in-from-bottom-4 duration-300">
           <div className="flex justify-between items-start mb-6">
             <div>
               <Dialog.Title className="font-display text-3xl tracking-tight text-foreground uppercase">

@@ -15,8 +15,8 @@ import {
 } from "lucide-react";
 import avatar from "@/assets/avatar-1.jpg";
 import { LogWorkoutModal } from "./LogWorkoutModal";
-import { useAuth } from "@/features/auth/AuthContext";
-import { AuthModal } from "@/features/auth/components/AuthModal";
+import { useAuth } from "@/core/auth/AuthContext";
+import { AuthModal } from "@/core/auth/components/AuthModal";
 import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
 
 const links = [
@@ -137,7 +137,7 @@ export function AppNav() {
 
               <DropdownMenu.Portal>
                 <DropdownMenu.Content
-                  className="w-56 bg-elevated border border-border rounded-xl p-2 shadow-2xl z-[100] animate-in fade-in zoom-in-95 duration-150"
+                  className="w-56 bg-elevated border border-border rounded-xl p-2 shadow-2xl z-100 animate-in fade-in zoom-in-95 duration-150"
                   side="top"
                   align="start"
                   sideOffset={10}

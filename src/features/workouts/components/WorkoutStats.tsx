@@ -41,7 +41,7 @@ export function WorkoutStats() {
             Last 7 Days (KG)
           </span>
         </div>
-        <div className="h-[200px] w-full">
+        <div className="h-50 w-full">
           <ResponsiveContainer width="100%" height="100%">
             <BarChart data={volumeData}>
               <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#262626" />
@@ -78,7 +78,7 @@ export function WorkoutStats() {
             Times Played / Month
           </span>
         </div>
-        <div className="h-[200px] w-full flex items-center justify-center">
+        <div className="h-50 w-full flex items-center justify-center">
           <ResponsiveContainer width="100%" height="100%">
             <PieChart>
               <Pie

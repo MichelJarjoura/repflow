@@ -1,8 +1,8 @@
 import { useState } from "react";
-import { PostHeader } from "../post-components/PostHeader";
-import PostFooter from "../post-components/PostFooter";
-import { WorkoutPostContent } from "../post-components/PostContent";
-import { Comments } from "../post-components/Comments";
+import { PostHeader } from "../components/PostHeader";
+import PostFooter from "../components/PostFooter";
+import { WorkoutPostContent } from "../components/PostContent";
+import { Comments } from "../components/Comments";
 
 type Exercise = {
   name: string;
@@ -25,7 +25,7 @@ export function WorkoutPost({ avatar, name, meta, volume, duration, exercises }:
     <article className="bg-card border border-border rounded-xl overflow-hidden">
       <PostHeader avatar={avatar} name={name} meta={meta} />
       <WorkoutPostContent volume={volume} duration={duration} exercises={exercises} />
-      <PostFooter onCommentClick={() => setShowComments(!showComments)} />
+      <PostFooter onCommentClick={() => setShowComments(!showComments)} likes={0} />
       {showComments && <Comments />}
     </article>
   );

@@ -12,9 +12,9 @@ import {
 } from "lucide-react";
 import avatar from "@/assets/avatar-1.jpg";
 import { WorkoutStats } from "@/features/workouts/components/WorkoutStats";
-import { PRPost } from "@/features/feed/components/posts/views/PRPost";
-import { WorkoutPost } from "@/features/feed/components/posts/views/WorkoutPost";
-import { RunPost } from "@/features/feed/components/posts/views/RunPost";
+import { PRPost } from "@/shared/posts/views/PRPost";
+import { WorkoutPost } from "@/shared/posts/views/WorkoutPost";
+import { RunPost } from "@/shared/posts/views/RunPost";
 import avatar1 from "@/assets/avatar-1.jpg";
 
 const prs = [

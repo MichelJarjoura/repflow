@@ -4,7 +4,7 @@
   "rsc": false,
   "tsx": true,
   "tailwind": {
-    "css": "src/styles.css",
+    "css": "src/core/styles.css",
     "baseColor": "slate",
     "cssVariables": true,
     "prefix": ""
@@ -13,10 +13,10 @@
   "rtl": false,
   "aliases": {
     "components": "@/components",
-    "utils": "@/lib/utils",
+    "utils": "@/core/lib/utils",
     "ui": "@/components/ui",
-    "lib": "@/lib",
-    "hooks": "@/hooks"
+    "lib": "@/core/lib",
+    "hooks": "@/core/hooks"
   },
   "registries": {}
 }

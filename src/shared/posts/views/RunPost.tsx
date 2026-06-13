@@ -1,9 +1,9 @@
 import { useState } from "react";
-import { PostHeader } from "../post-components/PostHeader";
+import { PostHeader } from "../components/PostHeader";
 import routeImg from "@/assets/run-route.jpg";
-import PostFooter from "../post-components/PostFooter";
-import { RunPostContent } from "../post-components/PostContent";
-import { Comments } from "../post-components/Comments";
+import PostFooter from "../components/PostFooter";
+import { RunPostContent } from "../components/PostContent";
+import { Comments } from "../components/Comments";
 
 type Props = {
   avatar: string;
@@ -20,7 +20,7 @@ export function RunPost({ avatar, name, meta, distance, pace }: Props) {
     <article className="bg-card border border-border rounded-xl overflow-hidden">
       <PostHeader avatar={avatar} name={name} meta={meta} bordered={false} />
       <RunPostContent routeImg={routeImg} distance={distance} pace={pace} />
-      <PostFooter onCommentClick={() => setShowComments(!showComments)} />
+      <PostFooter onCommentClick={() => setShowComments(!showComments)} likes={0} />
       {showComments && <Comments />}
     </article>
   );

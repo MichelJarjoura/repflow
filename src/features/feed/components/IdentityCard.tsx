@@ -1,5 +1,5 @@
-import { useAuth } from "@/features/auth/AuthContext";
-import { AuthModal } from "@/features/auth/components/AuthModal";
+import { useAuth } from "@/core/auth/AuthContext";
+import { AuthModal } from "@/core/auth/components/AuthModal";
 import { useState } from "react";
 import { ArrowRight, Trophy, Zap, Target } from "lucide-react";
 
