@@ -100,7 +100,7 @@ export function AppNav() {
             <span className="text-lg xl:inline hidden">Search</span>
           </button>
 
-          <button 
+          <button
             onClick={() => !isAuthenticated && setIsAuthModalOpen(true)}
             className="flex items-center gap-4 p-3 rounded-full text-muted-foreground hover:bg-elevated hover:text-foreground transition-colors"
           >
@@ -123,15 +123,20 @@ export function AppNav() {
               <DropdownMenu.Trigger asChild>
                 <button className="flex items-center gap-3 p-3 w-full rounded-full hover:bg-elevated transition-colors outline-none group text-left">
                   <div className="size-10 rounded-full bg-elevated outline outline-white/10 overflow-hidden shrink-0">
-                    <img src={user?.avatar || avatar} alt="Your profile" className="w-full h-full object-cover" />
+                    <img
+                      src={user?.avatar || avatar}
+                      alt="Your profile"
+                      className="w-full h-full object-cover"
+                    />
                   </div>
                   <div className="hidden xl:flex flex-col items-start text-sm overflow-hidden">
-                    <span className="font-bold text-foreground truncate w-full">
-                      {user?.name}
-                    </span>
+                    <span className="font-bold text-foreground truncate w-full">{user?.name}</span>
                     <span className="text-muted-foreground truncate w-full">{user?.username}</span>
                   </div>
-                  <MoreHorizontal size={20} className="hidden xl:block ml-auto text-muted-foreground group-hover:text-white" />
+                  <MoreHorizontal
+                    size={20}
+                    className="hidden xl:block ml-auto text-muted-foreground group-hover:text-white"
+                  />
                 </button>
               </DropdownMenu.Trigger>
 
@@ -151,7 +156,7 @@ export function AppNav() {
                     <span className="font-medium">Settings</span>
                   </DropdownMenu.Item>
                   <DropdownMenu.Separator className="h-px bg-border my-1" />
-                  <DropdownMenu.Item 
+                  <DropdownMenu.Item
                     onClick={() => logout()}
                     className="flex items-center gap-3 p-3 rounded-lg hover:bg-red-500/10 outline-none cursor-pointer transition-colors text-red-400 hover:text-red-500"
                   >
@@ -207,4 +212,3 @@ export function AppNav() {
     </>
   );
 }
-

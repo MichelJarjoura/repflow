@@ -7,8 +7,8 @@ import {
   isSameMonth,
   eachDayOfInterval,
   startOfToday,
+  subYears,
 } from "date-fns";
-
 
 // Sample logged days (yyyy-MM-dd format)
 const loggedDays = new Set<string>([
@@ -16,9 +16,16 @@ const loggedDays = new Set<string>([
   format(addDays(startOfToday(), -1), "yyyy-MM-dd"),
   format(addDays(startOfToday(), -2), "yyyy-MM-dd"),
   format(addDays(startOfToday(), -3), "yyyy-MM-dd"),
-  format(addDays(subWeeks(startOfToday(), 5),5), "yyyy-MM-dd"),
-
-
+  format(addDays(subWeeks(startOfToday(), 5), 5), "yyyy-MM-dd"),
+  format(addDays(subWeeks(startOfToday(), 4), 2), "yyyy-MM-dd"),
+  format(addDays(subWeeks(startOfToday(), 6), 3), "yyyy-MM-dd"),
+  format(addDays(subWeeks(startOfToday(), 7), 4), "yyyy-MM-dd"),
+  format(addDays(subWeeks(startOfToday(), 9), 1), "yyyy-MM-dd"),
+  format(addDays(subWeeks(startOfToday(), 10), 4), "yyyy-MM-dd"),
+  format(addDays(subWeeks(startOfToday(), 11), 5), "yyyy-MM-dd"),
+  format(addDays(subWeeks(startOfToday(), 10), 6), "yyyy-MM-dd"),
+  format(addDays(subWeeks(startOfToday(), 12), 2), "yyyy-MM-dd"),
+  format(addDays(subWeeks(startOfToday(), 11), 3), "yyyy-MM-dd"),
 ]);
 
 export function ConsistencyCalendar() {
@@ -29,11 +36,8 @@ export function ConsistencyCalendar() {
 
     const days = eachDayOfInterval({ start: startDate, end: endDate });
 
-
-
-
     const weeksData = [];
-    let currentWeek: { day: Date; intensity: number; }[] = [];
+    let currentWeek: { day: Date; intensity: number }[] = [];
     let total = 0;
 
     const labels: { month: string; index: number }[] = [];
@@ -48,9 +52,8 @@ export function ConsistencyCalendar() {
         const month = day.getMonth();
         const year = day.getFullYear();
         if (month !== lastMonth) {
-          const label = year !== lastYear 
-            ? `${format(day, "MMM")} '${format(day, "yy")}` 
-            : format(day, "MMM");
+          const label =
+            year !== lastYear ? `${format(day, "MMM")} '${format(day, "yy")}` : format(day, "MMM");
           labels.push({ month: label, index: weeksData.length });
           lastMonth = month;
           lastYear = year;
@@ -80,7 +83,6 @@ export function ConsistencyCalendar() {
             Training frequency over the past year
           </p>
         </div>
-
       </div>
 
       <div className="overflow-x-auto pb-2">
@@ -132,12 +134,10 @@ export function ConsistencyCalendar() {
   );
 }
 
-
-
 function getColorOfDay(day: Date) {
   const dateKey = format(day, "yyyy-MM-dd");
   if (loggedDays.has(dateKey)) {
     return "bg-primary";
   }
-    return "bg-elevated";
-  }
+  return "bg-elevated";
+}

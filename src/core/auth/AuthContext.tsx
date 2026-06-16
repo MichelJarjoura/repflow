@@ -8,7 +8,6 @@ interface User {
 }
 
 interface AuthContextType {
-
   user: User | null;
   isAuthenticated: boolean;
   isLoading: boolean;
@@ -18,7 +17,6 @@ interface AuthContextType {
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
-
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
@@ -37,14 +35,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setIsLoading(true);
     // Simulate API call
     await new Promise((resolve) => setTimeout(resolve, 800));
-    
+
     const mockUser: User = {
       id: "1",
       name: "Michel Jarjoura",
       username: username.startsWith("@") ? username : `@${username}`,
       avatar: "/src/assets/avatar-1.jpg",
     };
-    
+
     setUser(mockUser);
     localStorage.setItem("repflow_user", JSON.stringify(mockUser));
     setIsLoading(false);
@@ -54,13 +52,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setIsLoading(true);
     // Simulate API call
     await new Promise((resolve) => setTimeout(resolve, 800));
-    
+
     const mockUser: User = {
       id: Math.random().toString(36).substr(2, 9),
       name,
       username: username.startsWith("@") ? username : `@${username}`,
     };
-    
+
     setUser(mockUser);
     localStorage.setItem("repflow_user", JSON.stringify(mockUser));
     setIsLoading(false);

@@ -33,11 +33,15 @@ export function FeedPage() {
                 <PlusCircle size={28} />
               </div>
               <div>
-                <h3 className="font-display text-xl tracking-tight text-foreground uppercase">Share your progress</h3>
-                <p className="text-muted-foreground text-sm">Join the community to log your own workouts and PRs.</p>
+                <h3 className="font-display text-xl tracking-tight text-foreground uppercase">
+                  Share your progress
+                </h3>
+                <p className="text-muted-foreground text-sm">
+                  Join the community to log your own workouts and PRs.
+                </p>
               </div>
             </div>
-            <button 
+            <button
               onClick={() => setIsAuthModalOpen(true)}
               className="bg-brand text-brand-foreground font-bold px-8 py-3 rounded-full hover:opacity-90 transition-opacity whitespace-nowrap"
             >

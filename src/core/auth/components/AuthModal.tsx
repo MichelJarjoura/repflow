@@ -36,8 +36,8 @@ export function AuthModal({ open, onOpenChange, defaultView = "login" }: AuthMod
                 {view === "login" ? "Welcome Back" : "Join the Flow"}
               </Dialog.Title>
               <Dialog.Description className="text-muted-foreground text-sm mt-1">
-                {view === "login" 
-                  ? "Enter your details to access your fitness identity." 
+                {view === "login"
+                  ? "Enter your details to access your fitness identity."
                   : "Create an account to start logging your progress."}
               </Dialog.Description>
             </div>
@@ -49,7 +49,9 @@ export function AuthModal({ open, onOpenChange, defaultView = "login" }: AuthMod
           <form onSubmit={handleSubmit} className="space-y-4">
             {view === "signup" && (
               <div className="space-y-2">
-                <label className="text-xs font-mono text-muted-foreground uppercase tracking-widest ml-1">Full Name</label>
+                <label className="text-xs font-mono text-muted-foreground uppercase tracking-widest ml-1">
+                  Full Name
+                </label>
                 <input
                   type="text"
                   required
@@ -61,7 +63,9 @@ export function AuthModal({ open, onOpenChange, defaultView = "login" }: AuthMod
               </div>
             )}
             <div className="space-y-2">
-              <label className="text-xs font-mono text-muted-foreground uppercase tracking-widest ml-1">Username</label>
+              <label className="text-xs font-mono text-muted-foreground uppercase tracking-widest ml-1">
+                Username
+              </label>
               <input
                 type="text"
                 required
