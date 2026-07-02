@@ -1,6 +1,7 @@
 export function RightRail() {
   return (
     <aside className="space-y-6">
+
       <div className="bg-brand/10 border border-brand/20 rounded-xl p-5">
         <h2 className="font-display text-xs tracking-[0.2em] text-brand mb-4 uppercase">
           Weekly Challenge

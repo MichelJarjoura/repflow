@@ -20,7 +20,7 @@ export function PRPost({ avatar, name, meta, lift, value, likes }: Props) {
     <article className="bg-card border border-brand/30 rounded-xl overflow-hidden shadow-[0_0_40px_-15px_rgba(223,255,0,0.15)]">
       <PostHeader avatar={avatar} name={name} meta={meta} badge="New PR" />
       <PRPostContent lift={lift} value={value} />
-      <PostFooter onCommentClick={() => setShowComments(!showComments)} likes={0} />
+      <PostFooter onCommentClick={() => setShowComments(!showComments)} likes={likes} />
       {showComments && <Comments />}
     </article>
   );

@@ -58,6 +58,7 @@ export function FeedPage() {
           meta="2 hours ago"
           lift="Overhead Press"
           value="140 KG"
+          likes={12}
         />
 
         <WorkoutPost
@@ -87,6 +88,7 @@ export function FeedPage() {
           meta="Yesterday"
           lift="Conventional Deadlift"
           value="172.5 KG"
+          likes={24}
         />
 
         <WorkoutPost

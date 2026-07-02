@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Link, useRouterState, useNavigate } from "@tanstack/react-router";
+import { Link, useRouterState } from "@tanstack/react-router";
 import {
   Home,
   Dumbbell,
@@ -31,8 +31,10 @@ export function AppNav() {
   const [isLogModalOpen, setIsLogModalOpen] = useState(false);
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const { user, isAuthenticated, logout } = useAuth();
-  const navigate = useNavigate();
 
+
+
+  //AuthModal pop : if not logedIn
   const handleLinkClick = (e: React.MouseEvent, to: string, isPublic: boolean) => {
     if (!isPublic && !isAuthenticated) {
       e.preventDefault();
@@ -69,7 +71,7 @@ export function AppNav() {
       <nav className="hidden md:flex flex-col fixed left-0 top-0 h-screen w-20 xl:w-64 border-r border-border bg-background p-4 z-50">
         <div className="mb-8 px-2 xl:px-4">
           <Link to="/" className="font-display text-2xl tracking-tighter text-brand">
-            REP<span className="text-white xl:inline hidden">FLOW</span>
+          REP<span className="text-white xl:inline hidden">FLOW</span>
             <span className="text-white xl:hidden">F</span>
           </Link>
         </div>
@@ -94,19 +96,6 @@ export function AppNav() {
               </Link>
             );
           })}
-
-          <button className="flex items-center gap-4 p-3 rounded-full text-muted-foreground hover:bg-elevated hover:text-foreground transition-colors mt-2">
-            <Search size={26} />
-            <span className="text-lg xl:inline hidden">Search</span>
-          </button>
-
-          <button
-            onClick={() => !isAuthenticated && setIsAuthModalOpen(true)}
-            className="flex items-center gap-4 p-3 rounded-full text-muted-foreground hover:bg-elevated hover:text-foreground transition-colors"
-          >
-            <Bell size={26} />
-            <span className="text-lg xl:inline hidden">Notifications</span>
-          </button>
 
           <button
             onClick={handleLogWorkout}
