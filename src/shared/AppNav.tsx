@@ -5,6 +5,7 @@ import {
   Dumbbell,
   Activity,
   User,
+  UsersRound,
   PlusSquare,
   Search,
   Bell,
@@ -15,7 +16,7 @@ import {
 } from "lucide-react";
 import avatar from "@/assets/avatar-1.jpg";
 import { LogWorkoutModal } from "./LogWorkoutModal";
-import { useAuth } from "@/core/auth/AuthContext";
+import { useAuth } from "@/core/auth/useAuth";
 import { AuthModal } from "@/core/auth/components/AuthModal";
 import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
 
@@ -23,6 +24,7 @@ const links = [
   { to: "/feed", label: "Feed", icon: Home, public: true },
   { to: "/workouts", label: "Workouts", icon: Dumbbell, public: false },
   { to: "/runs", label: "Runs", icon: Activity, public: false },
+  { to: "/communities", label: "Communities", icon: UsersRound, public: true },
   { to: "/profile", label: "Profile", icon: User, public: false },
 ] as const;
 
@@ -32,9 +34,7 @@ export function AppNav() {
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const { user, isAuthenticated, logout } = useAuth();
 
-
-
-  //AuthModal pop : if not logedIn
+  // Open sign-in when an authenticated-only action is selected.
   const handleLinkClick = (e: React.MouseEvent, to: string, isPublic: boolean) => {
     if (!isPublic && !isAuthenticated) {
       e.preventDefault();
@@ -71,7 +71,7 @@ export function AppNav() {
       <nav className="hidden md:flex flex-col fixed left-0 top-0 h-screen w-20 xl:w-64 border-r border-border bg-background p-4 z-50">
         <div className="mb-8 px-2 xl:px-4">
           <Link to="/" className="font-display text-2xl tracking-tighter text-brand">
-          REP<span className="text-white xl:inline hidden">FLOW</span>
+            REP<span className="text-white xl:inline hidden">FLOW</span>
             <span className="text-white xl:hidden">F</span>
           </Link>
         </div>

@@ -75,7 +75,6 @@ export function ProfilePage() {
               🛠️🦾
             </p>
           </div>
-
         </div>
 
         <div className="flex flex-row gap-6 justify-center">

@@ -7,7 +7,7 @@ import { FeedFilter } from "./components/FeedFilter";
 import avatar1 from "@/assets/avatar-1.jpg";
 import avatar2 from "@/assets/avatar-2.jpg";
 import avatar3 from "@/assets/avatar-3.jpg";
-import { useAuth } from "@/core/auth/AuthContext";
+import { useAuth } from "@/core/auth/useAuth";
 import { AuthModal } from "@/core/auth/components/AuthModal";
 import { useState } from "react";
 import { PlusCircle } from "lucide-react";

@@ -1,17 +1,8 @@
-import { createFileRoute, redirect } from "@tanstack/react-router";
+import { createFileRoute } from "@tanstack/react-router";
 import { WorkoutsPage } from "@/features/workouts";
+import { RequireAuth } from "@/shared/RequireAuth";
 
 export const Route = createFileRoute("/workouts")({
-  beforeLoad: () => {
-    if (typeof window !== "undefined") {
-      const storedUser = localStorage.getItem("repflow_user");
-      if (!storedUser) {
-        throw redirect({
-          to: "/feed",
-        });
-      }
-    }
-  },
   head: () => ({
     meta: [
       { title: "REPFLOW — Workouts" },
@@ -23,5 +14,9 @@ export const Route = createFileRoute("/workouts")({
       { property: "og:description", content: "Browse training splits and templates." },
     ],
   }),
-  component: WorkoutsPage,
+  component: () => (
+    <RequireAuth>
+      <WorkoutsPage />
+    </RequireAuth>
+  ),
 });
