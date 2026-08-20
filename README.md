@@ -22,7 +22,7 @@ The frontend will call `/api/Auth/*` when the value is an origin and will not du
 
 ## Authentication integration
 
-The authentication client lives in `src/core/api/auth.ts`. It sends cookies with every request (`credentials: "include"`) and also supports an access token returned in a JSON login/register response. A returned token is stored only in `sessionStorage`, not persistent browser storage.
+The authentication client lives in `src/core/api/auth.ts`. It uses a bearer token returned by the JSON login/register response and sends that token in the `Authorization` header for protected requests. A returned token is stored only in `sessionStorage`, not persistent browser storage.
 
 | Backend endpoint                 | Frontend flow                                   | Request body expected by the frontend                     |
 | -------------------------------- | ----------------------------------------------- | --------------------------------------------------------- |
@@ -45,7 +45,7 @@ The client accepts these common response shapes:
 { "accessToken": "...", "data": { "id": "...", "fullName": "...", "userName": "..." } }
 ```
 
-For cookie sessions, the server can omit a token and identify the user through `GET /api/Auth/me`. For cross-origin cookie sessions, configure the backend to allow the frontend origin with credentials and issue cookies compatible with the chosen deployment topology.
+The backend is configured for header-based JWT authentication. For cross-origin deployment, add the exact frontend origin to `Cors:AllowedOrigins` and allow the `Authorization` request header.
 
 > The exact server response DTO was not provided. The client normalizes common `user`, `data`, `token`, and `accessToken` response fields. If the backend uses a different schema, adjust only the normalization functions in `src/core/api/auth.ts`.
 

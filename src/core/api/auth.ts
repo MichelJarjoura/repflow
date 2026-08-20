@@ -149,7 +149,7 @@ async function request<T>(path: string, options: ApiRequestOptions = {}): Promis
       ...options,
       headers,
       body: options.body === undefined ? undefined : JSON.stringify(options.body),
-      credentials: "include",
+      credentials: "omit",
     });
   } catch {
     throw new ApiError(
