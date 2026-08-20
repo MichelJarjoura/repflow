@@ -1,3 +1,13 @@
+import {
+  ApiError,
+  apiRequest,
+  asRecord,
+  clearSessionToken,
+  getSessionToken,
+  readString,
+  storeSessionToken,
+} from "./client";
+
 export type AuthenticatedUser = {
   id: string;
   name: string;
@@ -30,218 +40,154 @@ export type ResetPasswordInput = {
   password: string;
 };
 
-type JsonRecord = Record<string, unknown>;
-type ApiRequestOptions = Omit<RequestInit, "body"> & { body?: unknown };
+type JwtClaims = Record<string, unknown>;
 
-const tokenKey = "repflow_session_token";
-const configuredApiUrl = (import.meta.env.VITE_API_BASE_URL ?? "").trim().replace(/\/$/, "");
-const defaultApiUrl = import.meta.env.DEV ? "http://localhost:5024/api" : "/api";
-const apiBaseUrl = configuredApiUrl
-  ? configuredApiUrl.endsWith("/api")
-    ? configuredApiUrl
-    : `${configuredApiUrl}/api`
-  : defaultApiUrl;
+type BackendUser = {
+  id?: string;
+  username?: string;
+  email?: string;
+  profilePictureUrl?: string;
+};
 
-export class ApiError extends Error {
-  constructor(
-    message: string,
-    public readonly status: number,
-    public readonly details?: unknown,
-  ) {
-    super(message);
-    this.name = "ApiError";
+function decodeToken(token: string): JwtClaims | null {
+  const payload = token.split(".")[1];
+  if (!payload) return null;
+  try {
+    const normalized = payload.replace(/-/g, "+").replace(/_/g, "/");
+    const decoded = atob(normalized.padEnd(Math.ceil(normalized.length / 4) * 4, "="));
+    const json = decodeURIComponent(
+      Array.from(decoded)
+        .map((character) => `%${character.charCodeAt(0).toString(16).padStart(2, "0")}`)
+        .join(""),
+    );
+    const claims = JSON.parse(json);
+    return asRecord(claims) ?? null;
+  } catch {
+    return null;
   }
 }
 
-function getToken() {
-  return sessionStorage.getItem(tokenKey);
-}
-
-function storeToken(token: string | undefined) {
-  if (token) sessionStorage.setItem(tokenKey, token);
-}
-
-export function clearSessionToken() {
-  sessionStorage.removeItem(tokenKey);
-}
-
-function apiUrl(path: string) {
-  return `${apiBaseUrl}/Auth/${path}`;
-}
-
-function asRecord(value: unknown): JsonRecord | null {
-  return typeof value === "object" && value !== null && !Array.isArray(value)
-    ? (value as JsonRecord)
-    : null;
-}
-
-function readString(record: JsonRecord, keys: string[]) {
+function claim(claims: JwtClaims, keys: string[]) {
   for (const key of keys) {
-    const value = record[key];
-    if (typeof value === "string" && value.trim()) return value;
+    const value = claims[key];
+    if (typeof value === "string" && value) return value;
   }
-  return undefined;
+  return Object.entries(claims).find(([key, value]) => {
+    const normalized = key.toLowerCase();
+    return (
+      typeof value === "string" &&
+      keys.some((candidate) => normalized.endsWith(candidate.toLowerCase()))
+    );
+  })?.[1] as string | undefined;
 }
 
-function extractToken(payload: unknown) {
-  const root = asRecord(payload);
-  const data = root ? (asRecord(root.data) ?? root) : null;
-  return data ? readString(data, ["token", "accessToken", "access_token", "jwt"]) : undefined;
-}
-
-function extractUser(payload: unknown): AuthenticatedUser | null {
-  const root = asRecord(payload);
-  if (!root) return null;
-  const nested = asRecord(root.user) ?? asRecord(root.data);
-  const source = nested ?? root;
-  const id = readString(source, ["id", "userId", "user_id", "sub"]);
-  const email = readString(source, ["email", "emailAddress"]);
-  const rawUsername = readString(source, ["username", "userName", "handle"]);
-  const name =
-    readString(source, ["name", "fullName", "displayName"]) ?? rawUsername ?? email?.split("@")[0];
-
+function userFromToken(token: string): AuthenticatedUser | null {
+  const claims = decodeToken(token);
+  if (!claims) return null;
+  const id = claim(claims, ["sub", "nameidentifier"]);
+  const email = claim(claims, ["email"]);
+  const username = claim(claims, ["unique_name", "name"]);
+  const name = username ?? email?.split("@")[0];
   if (!id || !name) return null;
 
   return {
     id,
     name,
-    username: rawUsername
-      ? rawUsername.startsWith("@")
-        ? rawUsername
-        : `@${rawUsername}`
-      : `@${name.replace(/\s+/g, "").toLowerCase()}`,
+    username: username?.startsWith("@") ? username : `@${username ?? name}`,
     email,
-    avatar: readString(source, [
-      "avatar",
-      "avatarUrl",
-      "profileImageUrl",
-      "profilePictureUrl",
-      "imageUrl",
-    ]),
-    emailVerified: source.emailVerified === true || source.isEmailVerified === true,
+    emailVerified: true,
   };
 }
 
-function errorMessage(payload: unknown, fallback: string) {
+function userFromBackend(user: BackendUser, fallback: AuthenticatedUser): AuthenticatedUser {
+  const username = user.username ?? fallback.username.replace(/^@/, "");
+  return {
+    id: user.id ?? fallback.id,
+    name: username,
+    username: username.startsWith("@") ? username : `@${username}`,
+    email: user.email ?? fallback.email,
+    avatar: user.profilePictureUrl,
+    emailVerified: true,
+  };
+}
+
+function extractToken(payload: unknown) {
   const root = asRecord(payload);
-  if (!root) return fallback;
-  const direct = readString(root, ["message", "error", "title", "detail"]);
-  if (direct) return direct;
-  const errors = asRecord(root.errors);
-  if (errors) {
-    const first = Object.values(errors)
-      .flat()
-      .find((value) => typeof value === "string");
-    if (typeof first === "string") return first;
-  }
-  return fallback;
+  if (!root) return undefined;
+  return readString(root, ["token", "Token", "accessToken", "access_token", "jwt"]);
 }
 
-async function request<T>(path: string, options: ApiRequestOptions = {}): Promise<T> {
-  const token = getToken();
-  const headers = new Headers(options.headers);
-  if (options.body !== undefined) headers.set("Content-Type", "application/json");
-  if (token) headers.set("Authorization", `Bearer ${token}`);
-
-  let response: Response;
-  try {
-    response = await fetch(apiUrl(path), {
-      ...options,
-      headers,
-      body: options.body === undefined ? undefined : JSON.stringify(options.body),
-      credentials: "omit",
-    });
-  } catch {
-    throw new ApiError(
-      "We could not reach the authentication service. Check VITE_API_BASE_URL and your network connection.",
-      0,
-    );
-  }
-
-  const text = await response.text();
-  let payload: unknown = undefined;
-  if (text) {
-    try {
-      payload = JSON.parse(text);
-    } catch {
-      payload = text;
-    }
-  }
-
-  if (!response.ok) {
-    throw new ApiError(
-      errorMessage(payload, "The request could not be completed."),
-      response.status,
-      payload,
-    );
-  }
-
-  return payload as T;
-}
+export { ApiError, clearSessionToken };
 
 export const authApi = {
   async register(input: RegisterInput) {
-    const payload = await request<unknown>("register", {
+    await apiRequest<unknown>("Auth/register", {
       method: "POST",
       body: {
-        name: input.name,
-        fullName: input.name,
         username: input.username.replace(/^@/, ""),
-        userName: input.username.replace(/^@/, ""),
         email: input.email,
         password: input.password,
       },
     });
-    storeToken(extractToken(payload));
-    return extractUser(payload);
+    return null;
   },
 
   async login(input: LoginInput) {
-    const payload = await request<unknown>("login", { method: "POST", body: input });
-    storeToken(extractToken(payload));
-    const user = extractUser(payload);
-    return user ?? authApi.me();
-  },
-
-  async me() {
-    const payload = await request<unknown>("me");
-    const user = extractUser(payload);
+    const payload = await apiRequest<unknown>("Auth/login", { method: "POST", body: input });
+    const token = extractToken(payload);
+    if (!token)
+      throw new ApiError("The backend did not return an authentication token.", 500, payload);
+    storeSessionToken(token);
+    const user = userFromToken(token);
     if (!user)
-      throw new ApiError(
-        "The authentication service returned an unexpected user profile.",
-        500,
-        payload,
-      );
+      throw new ApiError("The authentication token did not contain a valid user identity.", 500);
     return user;
   },
 
+  async me(): Promise<AuthenticatedUser | null> {
+    const token = getSessionToken();
+    if (!token) return null;
+    const tokenUser = userFromToken(token);
+    if (!tokenUser) {
+      clearSessionToken();
+      return null;
+    }
+
+    try {
+      const profile = await apiRequest<BackendUser>(`Users/${tokenUser.id}`);
+      return userFromBackend(profile, tokenUser);
+    } catch (error) {
+      if (error instanceof ApiError && (error.status === 401 || error.status === 404))
+        return tokenUser;
+      throw error;
+    }
+  },
+
   async verifyEmail(input: VerifyEmailInput) {
-    return request<unknown>("verify-email", { method: "POST", body: input });
+    return apiRequest<unknown>("Auth/verify-email", {
+      method: "POST",
+      body: { token: input.token },
+    });
   },
 
   async forgotPassword(email: string) {
-    return request<unknown>("forgot-password", { method: "POST", body: { email } });
+    return apiRequest<unknown>("Auth/forgot-password", { method: "POST", body: { email } });
   },
 
   async resetPassword(input: ResetPasswordInput) {
-    return request<unknown>("reset-password", {
+    return apiRequest<unknown>("Auth/reset-password", {
       method: "POST",
-      body: {
-        email: input.email,
-        token: input.token,
-        password: input.password,
-        newPassword: input.password,
-      },
+      body: { token: input.token, newPassword: input.password },
     });
   },
 
   async testProtected() {
-    return request<unknown>("test-protected");
+    return apiRequest<unknown>("Auth/test-protected");
   },
 
   async logout() {
     try {
-      await request<unknown>("logout", { method: "POST" });
+      await apiRequest<unknown>("Auth/logout", { method: "POST" });
     } finally {
       clearSessionToken();
     }

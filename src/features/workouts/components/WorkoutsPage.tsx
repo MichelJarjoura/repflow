@@ -3,8 +3,18 @@ import { LogWorkoutCard } from "./LogWorkoutCard";
 import { LogPRCard } from "./LogPRCard";
 import { ConsistencyCalendar } from "./ConsistencyCalendar";
 import { Calendar, TrendingUp, Zap, Target } from "lucide-react";
+import { useAuth } from "@/core/auth/useAuth";
+import { useProfile } from "@/features/profile/useProfile";
 
 export function WorkoutsPage() {
+  const { user, isAuthenticated } = useAuth();
+  const { sessions, physicalData } = useProfile(user?.id, isAuthenticated);
+  const records = physicalData?.personalRecords ?? [];
+  const topRecords = [...records]
+    .sort((left, right) => right.maxWeightKg - left.maxWeightKg)
+    .slice(0, 3);
+  const maxLoad = topRecords[0]?.maxWeightKg ?? 0;
+
   return (
     <main className="max-w-6xl mx-auto px-6 py-8 space-y-8">
       {/* Header Section */}
@@ -16,9 +26,22 @@ export function WorkoutsPage() {
           </p>
         </div>
         <div className="flex items-center gap-6">
-          <StatMini label="Consistency" value="92%" icon={<Calendar size={14} />} />
-          <StatMini label="Intensity" value="+4.2%" icon={<TrendingUp size={14} />} trend="up" />
-          <StatMini label="Rank" value="A+" icon={<Zap size={14} />} />
+          <StatMini
+            label="Sessions"
+            value={String(sessions.length)}
+            icon={<Calendar size={14} />}
+          />
+          <StatMini
+            label="Records"
+            value={String(records.length)}
+            icon={<TrendingUp size={14} />}
+            trend="up"
+          />
+          <StatMini
+            label="Max load"
+            value={maxLoad ? `${maxLoad} KG` : "—"}
+            icon={<Zap size={14} />}
+          />
         </div>
       </header>
 
@@ -56,14 +79,21 @@ export function WorkoutsPage() {
               </div>
 
               <div className="space-y-6">
-                <LiftProgress
-                  label="Conventional Deadlift"
-                  current={210}
-                  previous={205}
-                  color="brand"
-                />
-                <LiftProgress label="Back Squat" current={165} previous={160} color="brand" />
-                <LiftProgress label="Bench Press" current={125} previous={125} color="muted" />
+                {topRecords.length === 0 ? (
+                  <p className="text-sm text-muted-foreground">
+                    Log workout sessions to build your personal-record history.
+                  </p>
+                ) : (
+                  topRecords.map((record) => (
+                    <LiftProgress
+                      key={record.exerciseId}
+                      label={record.exerciseName}
+                      current={record.maxWeightKg}
+                      previous={0}
+                      color="brand"
+                    />
+                  ))
+                )}
               </div>
             </div>
 
@@ -78,13 +108,13 @@ export function WorkoutsPage() {
                     <p className="text-[10px] text-muted-foreground uppercase tracking-widest">
                       Avg. Intensity
                     </p>
-                    <p className="text-3xl font-display">84%</p>
+                    <p className="text-3xl font-display">{sessions.length}</p>
                   </div>
                   <div className="text-right space-y-1">
                     <p className="text-[10px] text-muted-foreground uppercase tracking-widest">
                       PR Frequency
                     </p>
-                    <p className="text-xl font-display text-brand">2.4 / MO</p>
+                    <p className="text-xl font-display text-brand">{records.length} total</p>
                   </div>
                 </div>
 
@@ -93,14 +123,15 @@ export function WorkoutsPage() {
                     <p className="text-[10px] text-muted-foreground uppercase tracking-widest mb-1">
                       Total PRs
                     </p>
-                    <p className="text-2xl font-display">48</p>
+                    <p className="text-2xl font-display">{records.length}</p>
                   </div>
                   <div className="bg-surface/60 p-4 rounded-xl border border-white/5 group hover:border-brand/30 transition-colors">
                     <p className="text-[10px] text-muted-foreground uppercase tracking-widest mb-1">
                       Max Load
                     </p>
                     <p className="text-2xl font-display text-brand">
-                      210<span className="text-sm ml-1">KG</span>
+                      {maxLoad || "—"}
+                      {maxLoad ? <span className="text-sm ml-1">KG</span> : null}
                     </p>
                   </div>
                 </div>
@@ -113,9 +144,22 @@ export function WorkoutsPage() {
                 Milestones
               </h4>
               <div className="space-y-3">
-                <MilestoneItem lift="Deadlift" weight="210kg" date="2 days ago" />
-                <MilestoneItem lift="Back Squat" weight="165kg" date="1 week ago" />
-                <MilestoneItem lift="Overhead Press" weight="85kg" date="3 weeks ago" />
+                {records.length === 0 ? (
+                  <p className="text-sm text-muted-foreground">
+                    No backend milestones recorded yet.
+                  </p>
+                ) : (
+                  records
+                    .slice(0, 3)
+                    .map((record) => (
+                      <MilestoneItem
+                        key={`${record.exerciseId}-${record.date}`}
+                        lift={record.exerciseName}
+                        weight={`${record.maxWeightKg}kg`}
+                        date={new Date(record.date).toLocaleDateString()}
+                      />
+                    ))
+                )}
               </div>
             </div>
           </div>

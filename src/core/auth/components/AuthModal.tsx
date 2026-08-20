@@ -102,8 +102,10 @@ export function AuthModal({ open, onOpenChange, defaultView = "login" }: AuthMod
           onOpenChange(false);
           return;
         }
-        setNotice("Your account was created. Check your inbox for the verification code.");
-        setView("verify");
+        setNotice("Your account was created. Sign in with your new credentials.");
+        setPassword("");
+        setConfirmPassword("");
+        setView("login");
         return;
       }
 

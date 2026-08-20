@@ -1,4 +1,12 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import {
+  challengeApi,
+  communityApi,
+  postApi,
+  type BackendChallenge,
+  type BackendCommunity,
+  type BackendPost,
+} from "@/core/api/repflow";
 
 type CommunityTone = "brand" | "violet" | "amber";
 
@@ -10,7 +18,8 @@ export type CommunityRecord = {
   category: string;
   tone: CommunityTone;
   initials: string;
-  joined?: boolean;
+  joined: boolean;
+  isPrivate: boolean;
 };
 
 export type CommunityPostRecord = {
@@ -19,206 +28,171 @@ export type CommunityPostRecord = {
   handle: string;
   body: string;
   createdAt: string;
+  likes: number;
+  comments: number;
+  isLiked: boolean;
 };
 
-export type CommunityData = {
-  communities: CommunityRecord[];
-  posts: Record<string, CommunityPostRecord[]>;
-  joinedChallenges: string[];
-  challengeProgress: Record<string, number>;
+export type CommunityChallengeRecord = {
+  id: string;
+  title: string;
+  description: string;
+  target: number;
+  progress: number;
+  unit: string;
+  participants: number;
+  daysLeft: number;
+  accent: string;
+  isJoined: boolean;
 };
 
 export const communityQueryKeys = {
   all: ["communities"] as const,
-  collection: () => [...communityQueryKeys.all, "collection"] as const,
-  posts: () => [...communityQueryKeys.all, "posts"] as const,
+  mine: () => [...communityQueryKeys.all, "mine"] as const,
+  posts: (communityId: string) => [...communityQueryKeys.all, "posts", communityId] as const,
+  challenges: (communityId: string) =>
+    [...communityQueryKeys.all, "challenges", communityId] as const,
   joinedChallenges: () => [...communityQueryKeys.all, "joined-challenges"] as const,
-  challengeProgress: () => [...communityQueryKeys.all, "challenge-progress"] as const,
 };
 
-const communityStoreKey = "repflow_communities";
-const postStoreKey = "repflow_community_posts";
-const challengeStoreKey = "repflow_joined_challenges";
-const progressStoreKey = "repflow_challenge_progress";
-
-const starterCommunities: CommunityRecord[] = [
-  {
-    id: "iron-collective",
-    name: "Iron Collective",
-    description:
-      "A focused space for lifters who show up, track the work, and build strength together.",
-    members: 1284,
-    category: "Strength training",
-    tone: "brand",
-    initials: "IC",
-    joined: true,
-  },
-  {
-    id: "barbell-club",
-    name: "The Barbell Club",
-    description:
-      "Technique, training blocks, and hard-earned personal records for serious barbell athletes.",
-    members: 846,
-    category: "Powerlifting",
-    tone: "violet",
-    initials: "BC",
-  },
-  {
-    id: "weekend-warriors",
-    name: "Weekend Warriors",
-    description: "A supportive crew for building consistency around a busy schedule.",
-    members: 2196,
-    category: "General fitness",
-    tone: "amber",
-    initials: "WW",
-  },
-];
-
-function canUseStorage() {
-  return typeof window !== "undefined";
+function initials(name: string) {
+  return (
+    name
+      .split(/\s+/)
+      .slice(0, 2)
+      .map((part) => part.charAt(0).toUpperCase())
+      .join("") || "RC"
+  );
 }
 
-function readStorage<T>(key: string, fallback: T) {
-  if (!canUseStorage()) return fallback;
-  const value = localStorage.getItem(key);
-  if (!value) return fallback;
-  try {
-    return JSON.parse(value) as T;
-  } catch {
-    localStorage.removeItem(key);
-    return fallback;
-  }
+function toneFor(value: string): CommunityTone {
+  const tones: CommunityTone[] = ["brand", "violet", "amber"];
+  const index = Array.from(value).reduce((total, character) => total + character.charCodeAt(0), 0);
+  return tones[index % tones.length];
 }
 
-function writeStorage<T>(key: string, value: T) {
-  if (canUseStorage()) localStorage.setItem(key, JSON.stringify(value));
-  return value;
+function mapCommunity(community: BackendCommunity): CommunityRecord {
+  return {
+    id: community.id,
+    name: community.name,
+    description: community.description || "A community building consistent training together.",
+    members: community.memberCount,
+    category: community.isPrivate ? "Private community" : "Training community",
+    tone: toneFor(community.id),
+    initials: initials(community.name),
+    joined: community.isMember,
+    isPrivate: community.isPrivate,
+  };
 }
 
-const communityAdapter = {
-  getCommunities: async () => readStorage(communityStoreKey, starterCommunities),
-  getPosts: async () => readStorage<Record<string, CommunityPostRecord[]>>(postStoreKey, {}),
-  getJoinedChallenges: async () => readStorage<string[]>(challengeStoreKey, []),
-  getChallengeProgress: async () => readStorage<Record<string, number>>(progressStoreKey, {}),
-  createCommunity: async (community: CommunityRecord) => {
-    const communities = readStorage(communityStoreKey, starterCommunities);
-    return writeStorage(communityStoreKey, [community, ...communities]);
-  },
-  joinCommunity: async (id: string) => {
-    const communities = readStorage(communityStoreKey, starterCommunities).map((community) =>
-      community.id === id && !community.joined
-        ? { ...community, joined: true, members: community.members + 1 }
-        : community,
-    );
-    return writeStorage(communityStoreKey, communities);
-  },
-  toggleChallenge: async (challengeId: string) => {
-    const current = readStorage<string[]>(challengeStoreKey, []);
-    const updated = current.includes(challengeId)
-      ? current.filter((id) => id !== challengeId)
-      : [...current, challengeId];
-    return writeStorage(challengeStoreKey, updated);
-  },
-  addContribution: async ({
-    challengeId,
-    amount,
-    target,
-  }: {
-    challengeId: string;
-    amount: number;
-    target: number;
-  }) => {
-    const current = readStorage<Record<string, number>>(progressStoreKey, {});
-    const updated = {
-      ...current,
-      [challengeId]: Math.min(target, (current[challengeId] ?? 0) + amount),
-    };
-    return writeStorage(progressStoreKey, updated);
-  },
-  publishPost: async ({
-    communityId,
-    post,
-  }: {
-    communityId: string;
-    post: CommunityPostRecord;
-  }) => {
-    const posts = readStorage<Record<string, CommunityPostRecord[]>>(postStoreKey, {});
-    const updated = {
-      ...posts,
-      [communityId]: [post, ...(posts[communityId] ?? [])],
-    };
-    return writeStorage(postStoreKey, updated);
-  },
-};
+function mapPost(post: BackendPost): CommunityPostRecord {
+  return {
+    id: post.id,
+    author: "Repflow member",
+    handle: `@${post.authorId.slice(0, 8)}`,
+    body: post.content,
+    createdAt: post.createdAt,
+    likes: post.likesCount,
+    comments: post.commentsCount,
+    isLiked: post.isLikedByCurrentUser,
+  };
+}
 
-export function useCommunityData() {
+function daysLeft(endDate: string) {
+  const result = Math.ceil((new Date(endDate).getTime() - Date.now()) / 86_400_000);
+  return Math.max(0, result);
+}
+
+function mapChallenge(challenge: BackendChallenge, joined: boolean): CommunityChallengeRecord {
+  return {
+    id: challenge.id ?? `${challenge.communityId}-${challenge.name}`,
+    title: challenge.name,
+    description: challenge.description || "Work with your community to complete this shared goal.",
+    target: challenge.goal,
+    progress: challenge.progress,
+    unit: "progress",
+    participants: 0,
+    daysLeft: daysLeft(challenge.endDate),
+    accent: "bg-brand",
+    isJoined: joined,
+  };
+}
+
+export function useCommunityData(selectedCommunityId: string | null, enabled: boolean) {
   const queryClient = useQueryClient();
-  const enabled = canUseStorage();
   const communitiesQuery = useQuery({
-    queryKey: communityQueryKeys.collection(),
-    queryFn: communityAdapter.getCommunities,
+    queryKey: communityQueryKeys.mine(),
+    queryFn: communityApi.getMine,
     enabled,
-    initialData: starterCommunities,
-    staleTime: Infinity,
+    select: (communities) => communities.map(mapCommunity),
   });
   const postsQuery = useQuery({
-    queryKey: communityQueryKeys.posts(),
-    queryFn: communityAdapter.getPosts,
-    enabled,
-    initialData: {},
-    staleTime: Infinity,
+    queryKey: communityQueryKeys.posts(selectedCommunityId ?? "none"),
+    queryFn: () => postApi.getByCommunity(selectedCommunityId!),
+    enabled: enabled && Boolean(selectedCommunityId),
+  });
+  const challengesQuery = useQuery({
+    queryKey: communityQueryKeys.challenges(selectedCommunityId ?? "none"),
+    queryFn: () => challengeApi.getActiveForCommunity(selectedCommunityId!),
+    enabled: enabled && Boolean(selectedCommunityId),
   });
   const joinedChallengesQuery = useQuery({
     queryKey: communityQueryKeys.joinedChallenges(),
-    queryFn: communityAdapter.getJoinedChallenges,
+    queryFn: challengeApi.getMine,
     enabled,
-    initialData: [],
-    staleTime: Infinity,
-  });
-  const challengeProgressQuery = useQuery({
-    queryKey: communityQueryKeys.challengeProgress(),
-    queryFn: communityAdapter.getChallengeProgress,
-    enabled,
-    initialData: {},
-    staleTime: Infinity,
   });
 
+  const joinedChallengeIds = new Set(
+    (joinedChallengesQuery.data ?? []).map((challenge) => challenge.id).filter(Boolean),
+  );
+  const challenges = (challengesQuery.data ?? []).map((challenge) =>
+    mapChallenge(challenge, joinedChallengeIds.has(challenge.id)),
+  );
+
+  const invalidateMine = () =>
+    queryClient.invalidateQueries({ queryKey: communityQueryKeys.mine() });
+  const invalidateSelected = () => {
+    if (!selectedCommunityId) return;
+    void queryClient.invalidateQueries({ queryKey: communityQueryKeys.posts(selectedCommunityId) });
+    void queryClient.invalidateQueries({
+      queryKey: communityQueryKeys.challenges(selectedCommunityId),
+    });
+    void queryClient.invalidateQueries({ queryKey: communityQueryKeys.joinedChallenges() });
+  };
+
   const createCommunityMutation = useMutation({
-    mutationFn: communityAdapter.createCommunity,
-    onSuccess: (communities) =>
-      queryClient.setQueryData(communityQueryKeys.collection(), communities),
+    mutationFn: communityApi.create,
+    onSuccess: invalidateMine,
   });
   const joinCommunityMutation = useMutation({
-    mutationFn: communityAdapter.joinCommunity,
-    onSuccess: (communities) =>
-      queryClient.setQueryData(communityQueryKeys.collection(), communities),
+    mutationFn: communityApi.join,
+    onSuccess: invalidateMine,
   });
-  const toggleChallengeMutation = useMutation({
-    mutationFn: communityAdapter.toggleChallenge,
-    onSuccess: (challengeIds) =>
-      queryClient.setQueryData(communityQueryKeys.joinedChallenges(), challengeIds),
+  const joinChallengeMutation = useMutation({
+    mutationFn: challengeApi.join,
+    onSuccess: invalidateSelected,
   });
-  const addContributionMutation = useMutation({
-    mutationFn: communityAdapter.addContribution,
-    onSuccess: (progress) =>
-      queryClient.setQueryData(communityQueryKeys.challengeProgress(), progress),
+  const updateParticipationMutation = useMutation({
+    mutationFn: ({ challengeId, amount }: { challengeId: string; amount: number }) =>
+      challengeApi.updateParticipation(challengeId, amount),
+    onSuccess: invalidateSelected,
   });
   const publishPostMutation = useMutation({
-    mutationFn: communityAdapter.publishPost,
-    onSuccess: (posts) => queryClient.setQueryData(communityQueryKeys.posts(), posts),
+    mutationFn: ({ communityId, content }: { communityId: string; content: string }) =>
+      postApi.create({ content, communityId }),
+    onSuccess: invalidateSelected,
   });
 
   return {
-    communities: communitiesQuery.data,
-    posts: postsQuery.data,
-    joinedChallenges: joinedChallengesQuery.data,
-    challengeProgress: challengeProgressQuery.data,
-    isLoading:
-      communitiesQuery.isLoading || postsQuery.isLoading || joinedChallengesQuery.isLoading,
+    communities: communitiesQuery.data ?? [],
+    posts: (postsQuery.data ?? []).map(mapPost),
+    challenges,
+    isLoading: communitiesQuery.isLoading || postsQuery.isLoading || challengesQuery.isLoading,
+    error: communitiesQuery.error ?? postsQuery.error ?? challengesQuery.error,
     createCommunity: createCommunityMutation.mutateAsync,
     joinCommunity: joinCommunityMutation.mutateAsync,
-    toggleChallenge: toggleChallengeMutation.mutateAsync,
-    addContribution: addContributionMutation.mutateAsync,
+    joinChallenge: joinChallengeMutation.mutateAsync,
+    updateParticipation: updateParticipationMutation.mutateAsync,
     publishPost: publishPostMutation.mutateAsync,
   };
 }

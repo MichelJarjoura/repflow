@@ -1,18 +1,24 @@
+import { useState } from "react";
+import { Heart, LoaderCircle, MessageCircle, PlusCircle, RefreshCw } from "lucide-react";
 import { IdentityCard } from "./components/IdentityCard";
-import { PRPost } from "../../shared/posts/views/PRPost";
-import { WorkoutPost } from "../../shared/posts/views/WorkoutPost";
 import { RightRail } from "./components/RightRail";
 import { FeedFilter } from "./components/FeedFilter";
-import avatar1 from "@/assets/avatar-1.jpg";
-import avatar2 from "@/assets/avatar-2.jpg";
+import { useFeed } from "./useFeed";
 import { useAuth } from "@/core/auth/useAuth";
 import { AuthModal } from "@/core/auth/components/AuthModal";
-import { useState } from "react";
-import { PlusCircle } from "lucide-react";
+import type { BackendPost } from "@/core/api/repflow";
+
+function relativeTime(value: string) {
+  const minutes = Math.max(1, Math.round((Date.now() - new Date(value).getTime()) / 60_000));
+  if (minutes < 60) return `${minutes}m ago`;
+  if (minutes < 1440) return `${Math.round(minutes / 60)}h ago`;
+  return `${Math.round(minutes / 1440)}d ago`;
+}
 
 export function FeedPage() {
   const { isAuthenticated } = useAuth();
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
+  const { posts, isLoading, error, refetch, toggleLike } = useFeed(isAuthenticated);
 
   return (
     <div className="max-w-6xl mx-auto px-6 py-8 grid grid-cols-1 lg:grid-cols-12 gap-8">
@@ -24,7 +30,7 @@ export function FeedPage() {
           </p>
         </div>
 
-        {!isAuthenticated && (
+        {!isAuthenticated ? (
           <div className="bg-brand/5 border border-brand/20 rounded-2xl p-6 flex flex-col md:flex-row items-center justify-between gap-6 animate-in fade-in slide-in-from-top-4 duration-500">
             <div className="flex items-center gap-4">
               <div className="size-12 rounded-full bg-brand/20 flex items-center justify-center text-brand shrink-0">
@@ -35,7 +41,7 @@ export function FeedPage() {
                   Share your progress
                 </h3>
                 <p className="text-muted-foreground text-sm">
-                  Join the community to log your own workouts and PRs.
+                  Sign in to view your personalized training feed and join the conversation.
                 </p>
               </div>
             </div>
@@ -46,54 +52,17 @@ export function FeedPage() {
               Get Started
             </button>
           </div>
+        ) : (
+          <>
+            <FeedFilter />
+            {isLoading && <FeedLoading />}
+            {error && <FeedError onRetry={() => void refetch()} />}
+            {!isLoading && !error && posts.length === 0 && <FeedEmpty />}
+            {posts.map((post) => (
+              <BackendFeedPost key={post.id} post={post} onToggleLike={toggleLike} />
+            ))}
+          </>
         )}
-
-        <FeedFilter />
-
-        <PRPost
-          avatar={avatar1}
-          name="Marcus Thorne"
-          meta="2 hours ago"
-          lift="Overhead Press"
-          value="140 KG"
-          likes={12}
-        />
-
-        <WorkoutPost
-          avatar={avatar2}
-          name="Sarah Jenkins"
-          meta="4 hours ago • Late Night Push"
-          volume="8,420 KG"
-          duration="1H 12M"
-          exercises={[
-            { name: "Incline DB Bench", detail: "3 × 10 @ 32kg" },
-            { name: "Weighted Dips", detail: "4 × 12 @ BW+15" },
-            { name: "Lateral Raises", detail: "3 × 15 @ 12kg" },
-          ]}
-        />
-
-        <PRPost
-          avatar={avatar2}
-          name="Sarah Jenkins"
-          meta="Yesterday"
-          lift="Conventional Deadlift"
-          value="172.5 KG"
-          likes={24}
-        />
-
-        <WorkoutPost
-          avatar={avatar1}
-          name="Marcus Thorne"
-          meta="Yesterday • Heavy Pull"
-          volume="11,240 KG"
-          duration="1H 28M"
-          exercises={[
-            { name: "Deadlift", detail: "5 × 3 @ 180kg" },
-            { name: "Pendlay Row", detail: "4 × 8 @ 90kg" },
-            { name: "Weighted Pull-ups", detail: "4 × 6 @ BW+25" },
-            { name: "Hammer Curls", detail: "3 × 12 @ 18kg" },
-          ]}
-        />
       </section>
 
       <div className="lg:col-span-4 hidden lg:block">
@@ -103,6 +72,93 @@ export function FeedPage() {
         </div>
       </div>
       <AuthModal open={isAuthModalOpen} onOpenChange={setIsAuthModalOpen} defaultView="signup" />
+    </div>
+  );
+}
+
+function BackendFeedPost({
+  post,
+  onToggleLike,
+}: {
+  post: BackendPost;
+  onToggleLike: (id: string) => void;
+}) {
+  return (
+    <article className="rounded-3xl border border-border bg-card p-6">
+      <div className="flex items-center gap-3">
+        <div className="grid size-11 place-items-center rounded-full bg-brand/15 font-display text-lg text-brand">
+          {post.authorId.slice(0, 1).toUpperCase()}
+        </div>
+        <div>
+          <p className="font-bold text-foreground">Repflow member</p>
+          <p className="text-xs text-muted-foreground">
+            @{post.authorId.slice(0, 8)} · {relativeTime(post.createdAt)}
+          </p>
+        </div>
+      </div>
+      <p className="mt-5 whitespace-pre-wrap text-sm leading-7 text-foreground/90">
+        {post.content}
+      </p>
+      {post.mediaUrls.length > 0 && (
+        <div className="mt-5 grid gap-2 sm:grid-cols-2">
+          {post.mediaUrls.map((url) => (
+            <img
+              key={url}
+              src={url}
+              alt="Post media"
+              className="h-44 w-full rounded-2xl object-cover"
+            />
+          ))}
+        </div>
+      )}
+      <div className="mt-5 flex items-center gap-5 border-t border-border pt-4 text-sm text-muted-foreground">
+        <button
+          type="button"
+          onClick={() => onToggleLike(post.id)}
+          className={`inline-flex items-center gap-2 transition-colors hover:text-brand ${post.isLikedByCurrentUser ? "text-brand" : ""}`}
+          aria-label={post.isLikedByCurrentUser ? "Unlike post" : "Like post"}
+        >
+          <Heart size={18} fill={post.isLikedByCurrentUser ? "currentColor" : "none"} />{" "}
+          {post.likesCount}
+        </button>
+        <span className="inline-flex items-center gap-2">
+          <MessageCircle size={18} /> {post.commentsCount}
+        </span>
+      </div>
+    </article>
+  );
+}
+
+function FeedLoading() {
+  return (
+    <div className="grid min-h-56 place-items-center rounded-3xl border border-border bg-card">
+      <LoaderCircle className="animate-spin text-brand" size={26} />
+    </div>
+  );
+}
+
+function FeedError({ onRetry }: { onRetry: () => void }) {
+  return (
+    <div className="rounded-3xl border border-destructive/30 bg-destructive/10 p-6 text-center">
+      <p className="text-sm text-destructive">The feed could not be loaded from the backend.</p>
+      <button
+        type="button"
+        onClick={onRetry}
+        className="mt-4 inline-flex items-center gap-2 rounded-full border border-border px-4 py-2 text-sm font-bold text-foreground hover:text-brand"
+      >
+        <RefreshCw size={15} /> Try again
+      </button>
+    </div>
+  );
+}
+
+function FeedEmpty() {
+  return (
+    <div className="rounded-3xl border border-dashed border-border bg-surface/20 p-9 text-center">
+      <h3 className="font-display text-2xl tracking-tight">YOUR FEED IS READY</h3>
+      <p className="mt-2 text-sm text-muted-foreground">
+        Follow athletes or join communities to see shared training progress here.
+      </p>
     </div>
   );
 }

@@ -51,31 +51,6 @@ type CommunityPost = {
   createdAt: string;
 };
 
-const starterChallenges: Challenge[] = [
-  {
-    id: "million-kg",
-    title: "The 1,000-ton club",
-    description: "Move one million kilograms together before the month is over.",
-    target: 1_000_000,
-    progress: 684_320,
-    unit: "kg moved",
-    participants: 84,
-    daysLeft: 12,
-    accent: "bg-brand",
-  },
-  {
-    id: "squat-streak",
-    title: "Squat 30 days",
-    description: "Build a squat habit with a tracked daily movement streak.",
-    target: 30,
-    progress: 18,
-    unit: "community days",
-    participants: 41,
-    daysLeft: 19,
-    accent: "bg-violet-400",
-  },
-];
-
 function formatNumber(value: number) {
   return new Intl.NumberFormat("en-US", { maximumFractionDigits: 0 }).format(value);
 }
@@ -97,19 +72,18 @@ function toneClasses(tone: CommunityTone) {
 }
 
 export function CommunityPage() {
-  const { user, isAuthenticated } = useAuth();
+  const { isAuthenticated } = useAuth();
+  const [selectedCommunityId, setSelectedCommunityId] = useState<string | null>(null);
   const {
     communities,
     posts,
-    joinedChallenges,
-    challengeProgress,
+    challenges,
     createCommunity,
     joinCommunity: joinCommunityMutation,
-    toggleChallenge: toggleChallengeMutation,
-    addContribution: addContributionMutation,
+    joinChallenge: joinChallengeMutation,
+    updateParticipation: updateParticipationMutation,
     publishPost: publishPostMutation,
-  } = useCommunityData();
-  const [selectedCommunityId, setSelectedCommunityId] = useState<string | null>(null);
+  } = useCommunityData(selectedCommunityId, isAuthenticated);
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [isAuthOpen, setIsAuthOpen] = useState(false);
   const [search, setSearch] = useState("");
@@ -145,28 +119,21 @@ export function CommunityPage() {
 
   const toggleChallenge = (challengeId: string) => {
     requireAuthentication(() => {
-      void toggleChallengeMutation(challengeId);
+      void joinChallengeMutation(challengeId);
     });
   };
 
   const addContribution = (challengeId: string, target: number) => {
     const amount = Number(contribution[challengeId]);
     if (!Number.isFinite(amount) || amount <= 0) return;
-    void addContributionMutation({ challengeId, amount, target });
+    void updateParticipationMutation({ challengeId, amount: Math.min(amount, target) });
     setContribution((current) => ({ ...current, [challengeId]: "" }));
   };
 
   const publishPost = () => {
     const body = postBody.trim();
     if (!body || !selectedCommunity) return;
-    const post: CommunityPost = {
-      id: `${Date.now()}`,
-      author: user?.name ?? "Repflow member",
-      handle: user?.username ?? "@member",
-      body,
-      createdAt: new Date().toISOString(),
-    };
-    void publishPostMutation({ communityId: selectedCommunity.id, post });
+    void publishPostMutation({ communityId: selectedCommunity.id, content: body });
     setPostBody("");
   };
 
@@ -174,10 +141,12 @@ export function CommunityPage() {
     return (
       <CommunityDetail
         community={selectedCommunity}
-        posts={posts[selectedCommunity.id] ?? []}
-        challenges={starterChallenges}
-        joinedChallenges={joinedChallenges}
-        progress={challengeProgress}
+        posts={posts}
+        challenges={challenges}
+        joinedChallenges={challenges
+          .filter((challenge) => challenge.isJoined)
+          .map((challenge) => challenge.id)}
+        progress={{}}
         contribution={contribution}
         postBody={postBody}
         isAuthenticated={isAuthenticated}
@@ -292,8 +261,11 @@ export function CommunityPage() {
         open={isCreateOpen}
         onOpenChange={setIsCreateOpen}
         onCreate={(community) => {
-          void createCommunity(community);
-          setSelectedCommunityId(community.id);
+          void createCommunity({
+            name: community.name,
+            description: community.description,
+            isPrivate: false,
+          }).then((created) => setSelectedCommunityId(created.id));
         }}
       />
       <AuthModal open={isAuthOpen} onOpenChange={setIsAuthOpen} defaultView="signup" />
