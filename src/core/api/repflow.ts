@@ -167,3 +167,204 @@ export const sessionApi = {
 export const physicalDataApi = {
   get: (userId: string) => apiRequest<PhysicalData>(`users/${userId}/physical-data`),
 };
+
+export type BackendExercise = {
+  id: string;
+  name: string;
+  description: string;
+  mainMuscle: string;
+  secondaryMuscles: string[];
+};
+
+export type NotificationItem = {
+  id: string;
+  triggeredById: string;
+  type: string;
+  targetId: string;
+  content: string;
+  isRead: boolean;
+  createdAt: string;
+};
+
+export type ChatMessage = {
+  id: string;
+  senderId: string;
+  receiverId: string;
+  content: string;
+  isRead: boolean;
+  sentAt: string;
+};
+
+export type Coach = {
+  userId: string;
+  username: string;
+  bio?: string | null;
+  profilePictureUrl?: string | null;
+  certificationUrl: string;
+  approvedAt: string;
+  averageRating: number;
+  totalParticipants: number;
+};
+
+export type TrainingRequest = {
+  id?: string | null;
+  athleteId: string;
+  coachId: string;
+  message?: string | null;
+  status: string;
+  createdAt: string;
+  reviewedAt?: string | null;
+};
+
+export type WorkoutTemplate = {
+  id: string;
+  userId: string;
+  name: string;
+  durationDays: number;
+  isGeneral: boolean;
+  days: unknown[];
+};
+
+export type WorkoutPlan = { plan: unknown; days: unknown[] };
+
+export const exerciseApi = {
+  getAll: () => apiRequest<BackendExercise[]>("Exercises"),
+  getMuscles: () => apiRequest<string[]>("Exercises/muscles"),
+  getByMainMuscle: (muscle: string) =>
+    apiRequest<BackendExercise[]>(`Exercises/main-muscle/${encodeURIComponent(muscle)}`),
+};
+
+export const userSessionApi = {
+  create: (input: {
+    description?: string;
+    muscles: string[];
+    totalDurationMinutes: number;
+    exercises: Array<{ exerciseId: string; reps: number; sets: number; weight: number }>;
+  }) => apiRequest<BackendUserSession>("UserSessions", { method: "POST", body: input }),
+  update: (
+    id: string,
+    input: {
+      description?: string;
+      muscles: string[];
+      totalDurationMinutes: number;
+      exercises: Array<{ exerciseId: string; reps: number; sets: number; weight: number }>;
+    },
+  ) => apiRequest<BackendUserSession>(`UserSessions/${id}`, { method: "PUT", body: input }),
+};
+
+export const mediaApi = {
+  uploadProfilePicture: (file: File) => {
+    const body = new FormData();
+    body.append("file", file);
+    return apiRequest<{ url: string; fileName: string }>("Media/upload-profile-picture", {
+      method: "POST",
+      body,
+    });
+  },
+  uploadPostMedia: (files: File[]) => {
+    const body = new FormData();
+    files.forEach((file) => body.append("files", file));
+    return apiRequest<{ count: number; urls: string[] }>("Media/upload-post-media", {
+      method: "POST",
+      body,
+    });
+  },
+};
+
+export const commentsApi = {
+  getForPost: (postId: string, page = 1, pageSize = 20) =>
+    apiRequest<{ page: number; pageSize: number; count: number; data: BackendComment[] }>(
+      `Comments?postId=${encodeURIComponent(postId)}&page=${page}&pageSize=${pageSize}`,
+    ),
+};
+
+export const followApi = {
+  toggle: (targetUserId: string) =>
+    apiRequest<{ isFollowing: boolean; message: string }>(`Follows/${targetUserId}`, {
+      method: "POST",
+    }),
+  getFollowing: () => apiRequest<string[]>("Follows/following"),
+  getFollowers: () => apiRequest<string[]>("Follows/followers"),
+  accept: (followerId: string) =>
+    apiRequest<unknown>(`Follows/accept/${followerId}`, { method: "POST" }),
+};
+
+export const notificationApi = {
+  getAll: () => apiRequest<NotificationItem[]>("Notifications"),
+  markRead: (id: string) => apiRequest<unknown>(`Notifications/read/${id}`, { method: "PUT" }),
+};
+
+export const chatApi = {
+  getHistory: (otherUserId: string) => apiRequest<ChatMessage[]>(`Chat/history/${otherUserId}`),
+  send: (receiverId: string, content: string) =>
+    apiRequest<ChatMessage>("Chat/send", { method: "POST", body: { receiverId, content } }),
+  markRead: (messageId: string) => apiRequest<unknown>(`Chat/read/${messageId}`, { method: "PUT" }),
+};
+
+export const coachApi = {
+  getAll: () => apiRequest<Coach[]>("coach"),
+  getTopRated: () => apiRequest<Coach[]>("coach/top-rated"),
+  rate: (coachId: string, rating: number) =>
+    apiRequest<Coach>(`coach/${coachId}/rate`, { method: "POST", body: { rating } }),
+  apply: (certificationUrl: string) =>
+    apiRequest<unknown>("coach/applications", { method: "POST", body: { certificationUrl } }),
+  getMyApplication: () => apiRequest<unknown>("coach/applications/me"),
+  requestTraining: (coachId: string, message?: string) =>
+    apiRequest<TrainingRequest>("coach/training-requests", {
+      method: "POST",
+      body: { coachId, message },
+    }),
+  getTrainingRequests: () => apiRequest<TrainingRequest[]>("coach/training-requests"),
+  reviewTrainingRequest: (requestId: string, approved: boolean) =>
+    apiRequest<TrainingRequest>(`coach/training-requests/${requestId}`, {
+      method: "PATCH",
+      body: { approved },
+    }),
+};
+
+export const workoutPlanningApi = {
+  getTemplates: () => apiRequest<WorkoutTemplate[]>("workout-planning/templates"),
+  createTemplate: (input: {
+    name: string;
+    durationDays: number;
+    isGeneral: boolean;
+    days: Array<{
+      name: string;
+      isRestDay: boolean;
+      exercises?: Array<{
+        exerciseId: string;
+        plannedSets: number;
+        plannedReps: number;
+        plannedWeight: number;
+      }>;
+    }>;
+  }) => apiRequest<WorkoutTemplate>("workout-planning/templates", { method: "POST", body: input }),
+  archiveTemplate: (id: string) =>
+    apiRequest<unknown>(`workout-planning/templates/${id}`, { method: "DELETE" }),
+  getPlans: () => apiRequest<WorkoutPlan[]>("workout-planning/plans"),
+  createPlan: (input: {
+    name: string;
+    durationDays: number;
+    ownerUserId?: string;
+    templateIds?: string[];
+    days?: Array<{
+      name: string;
+      isRestDay: boolean;
+      exercises?: Array<{
+        exerciseId: string;
+        plannedSets: number;
+        plannedReps: number;
+        plannedWeight: number;
+      }>;
+    }>;
+  }) => apiRequest<WorkoutPlan>("workout-planning/plans", { method: "POST", body: input }),
+  startPlan: (id: string, startDate: string) =>
+    apiRequest<unknown>(`workout-planning/plans/${id}/start`, {
+      method: "POST",
+      body: { startDate },
+    }),
+  acceptPlan: (id: string) =>
+    apiRequest<unknown>(`workout-planning/plans/${id}/accept`, { method: "POST" }),
+  rejectPlan: (id: string) =>
+    apiRequest<unknown>(`workout-planning/plans/${id}/reject`, { method: "POST" }),
+};

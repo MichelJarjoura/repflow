@@ -13,6 +13,7 @@ import {
   LogIn,
   LogOut,
   Settings,
+  LayoutDashboard,
 } from "lucide-react";
 import avatar from "@/assets/avatar-1.jpg";
 import { LogWorkoutModal } from "./LogWorkoutModal";
@@ -25,6 +26,7 @@ const links = [
   { to: "/workouts", label: "Workouts", icon: Dumbbell, public: false },
   { to: "/runs", label: "Runs", icon: Activity, public: false },
   { to: "/communities", label: "Communities", icon: UsersRound, public: true },
+  { to: "/hub", label: "Athlete Hub", icon: LayoutDashboard, public: false },
   { to: "/profile", label: "Profile", icon: User, public: false },
 ] as const;
 

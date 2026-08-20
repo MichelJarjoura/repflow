@@ -1,12 +1,13 @@
 import { useState } from "react";
-import { Heart, LoaderCircle, MessageCircle, PlusCircle, RefreshCw } from "lucide-react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { Heart, LoaderCircle, MessageCircle, PlusCircle, RefreshCw, Send } from "lucide-react";
 import { IdentityCard } from "./components/IdentityCard";
 import { RightRail } from "./components/RightRail";
 import { FeedFilter } from "./components/FeedFilter";
 import { useFeed } from "./useFeed";
 import { useAuth } from "@/core/auth/useAuth";
 import { AuthModal } from "@/core/auth/components/AuthModal";
-import type { BackendPost } from "@/core/api/repflow";
+import { commentsApi, postApi, type BackendPost } from "@/core/api/repflow";
 
 function relativeTime(value: string) {
   const minutes = Math.max(1, Math.round((Date.now() - new Date(value).getTime()) / 60_000));
@@ -29,7 +30,6 @@ export function FeedPage() {
             Progress &middot; Not Entertainment
           </p>
         </div>
-
         {!isAuthenticated ? (
           <div className="bg-brand/5 border border-brand/20 rounded-2xl p-6 flex flex-col md:flex-row items-center justify-between gap-6 animate-in fade-in slide-in-from-top-4 duration-500">
             <div className="flex items-center gap-4">
@@ -64,7 +64,6 @@ export function FeedPage() {
           </>
         )}
       </section>
-
       <div className="lg:col-span-4 hidden lg:block">
         <div className="sticky top-8 space-y-6">
           <IdentityCard />
@@ -83,6 +82,22 @@ function BackendFeedPost({
   post: BackendPost;
   onToggleLike: (id: string) => void;
 }) {
+  const [commentsOpen, setCommentsOpen] = useState(false);
+  const [comment, setComment] = useState("");
+  const queryClient = useQueryClient();
+  const comments = useQuery({
+    queryKey: ["comments", post.id],
+    queryFn: () => commentsApi.getForPost(post.id),
+    enabled: commentsOpen,
+  });
+  const addComment = useMutation({
+    mutationFn: () => postApi.addComment(post.id, comment.trim()),
+    onSuccess: () => {
+      setComment("");
+      void queryClient.invalidateQueries({ queryKey: ["comments", post.id] });
+      void queryClient.invalidateQueries({ queryKey: ["feed"] });
+    },
+  });
   return (
     <article className="rounded-3xl border border-border bg-card p-6">
       <div className="flex items-center gap-3">
@@ -121,10 +136,58 @@ function BackendFeedPost({
           <Heart size={18} fill={post.isLikedByCurrentUser ? "currentColor" : "none"} />{" "}
           {post.likesCount}
         </button>
-        <span className="inline-flex items-center gap-2">
+        <button
+          type="button"
+          onClick={() => setCommentsOpen((current) => !current)}
+          className="inline-flex items-center gap-2 transition-colors hover:text-brand"
+        >
           <MessageCircle size={18} /> {post.commentsCount}
-        </span>
+        </button>
       </div>
+      {commentsOpen && (
+        <div className="mt-5 border-t border-border pt-4">
+          <div className="space-y-3">
+            {comments.isLoading ? (
+              <p className="text-sm text-muted-foreground">Loading comments…</p>
+            ) : comments.data?.data.length ? (
+              comments.data.data.map((item) => (
+                <div key={item.id} className="rounded-xl bg-surface/30 p-3">
+                  <p className="text-sm">{item.content}</p>
+                  <p className="mt-1 text-[10px] text-muted-foreground">
+                    @{item.authorId.slice(0, 8)} · {relativeTime(item.createdAt)}
+                  </p>
+                </div>
+              ))
+            ) : (
+              <p className="text-sm text-muted-foreground">Be the first to comment.</p>
+            )}
+          </div>
+          <form
+            className="mt-3 flex gap-2"
+            onSubmit={(event) => {
+              event.preventDefault();
+              if (comment.trim()) addComment.mutate();
+            }}
+          >
+            <input
+              value={comment}
+              onChange={(event) => setComment(event.target.value)}
+              placeholder="Write a comment"
+              className="auth-input flex-1"
+            />
+            <button
+              type="submit"
+              disabled={!comment.trim() || addComment.isPending}
+              className="grid size-10 place-items-center rounded-xl bg-brand text-brand-foreground"
+            >
+              <Send size={16} />
+            </button>
+          </form>
+          {addComment.error && (
+            <p className="mt-2 text-xs text-destructive">{addComment.error.message}</p>
+          )}
+        </div>
+      )}
     </article>
   );
 }
@@ -136,7 +199,6 @@ function FeedLoading() {
     </div>
   );
 }
-
 function FeedError({ onRetry }: { onRetry: () => void }) {
   return (
     <div className="rounded-3xl border border-destructive/30 bg-destructive/10 p-6 text-center">
@@ -151,7 +213,6 @@ function FeedError({ onRetry }: { onRetry: () => void }) {
     </div>
   );
 }
-
 function FeedEmpty() {
   return (
     <div className="rounded-3xl border border-dashed border-border bg-surface/20 p-9 text-center">
