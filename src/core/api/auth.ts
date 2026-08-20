@@ -106,7 +106,13 @@ function extractUser(payload: unknown): AuthenticatedUser | null {
         : `@${rawUsername}`
       : `@${name.replace(/\s+/g, "").toLowerCase()}`,
     email,
-    avatar: readString(source, ["avatar", "avatarUrl", "profileImageUrl", "imageUrl"]),
+    avatar: readString(source, [
+      "avatar",
+      "avatarUrl",
+      "profileImageUrl",
+      "profilePictureUrl",
+      "imageUrl",
+    ]),
     emailVerified: source.emailVerified === true || source.isEmailVerified === true,
   };
 }
@@ -189,7 +195,7 @@ export const authApi = {
     const payload = await request<unknown>("login", { method: "POST", body: input });
     storeToken(extractToken(payload));
     const user = extractUser(payload);
-    return user ?? this.me();
+    return user ?? authApi.me();
   },
 
   async me() {
