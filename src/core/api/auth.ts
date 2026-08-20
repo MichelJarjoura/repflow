@@ -35,7 +35,12 @@ type ApiRequestOptions = Omit<RequestInit, "body"> & { body?: unknown };
 
 const tokenKey = "repflow_session_token";
 const configuredApiUrl = (import.meta.env.VITE_API_BASE_URL ?? "").trim().replace(/\/$/, "");
-const apiBaseUrl = configuredApiUrl.endsWith("/api") ? configuredApiUrl : `${configuredApiUrl}/api`;
+const defaultApiUrl = import.meta.env.DEV ? "http://localhost:5024/api" : "/api";
+const apiBaseUrl = configuredApiUrl
+  ? configuredApiUrl.endsWith("/api")
+    ? configuredApiUrl
+    : `${configuredApiUrl}/api`
+  : defaultApiUrl;
 
 export class ApiError extends Error {
   constructor(
