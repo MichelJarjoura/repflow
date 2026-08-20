@@ -94,20 +94,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const clearError = useCallback(() => {
     setActionError(null);
-    loginMutation.reset();
-    registerMutation.reset();
-    verifyMutation.reset();
-    forgotMutation.reset();
-    resetMutation.reset();
-    logoutMutation.reset();
-  }, [
-    forgotMutation,
-    loginMutation,
-    logoutMutation,
-    registerMutation,
-    resetMutation,
-    verifyMutation,
-  ]);
+  }, []);
 
   const isLoading =
     sessionQuery.isLoading ||
