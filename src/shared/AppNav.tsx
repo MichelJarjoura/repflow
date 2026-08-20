@@ -3,7 +3,6 @@ import { Link, useRouterState } from "@tanstack/react-router";
 import {
   Home,
   Dumbbell,
-  Activity,
   User,
   UsersRound,
   PlusSquare,
@@ -24,7 +23,6 @@ import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
 const links = [
   { to: "/feed", label: "Feed", icon: Home, public: true },
   { to: "/workouts", label: "Workouts", icon: Dumbbell, public: false },
-  { to: "/runs", label: "Runs", icon: Activity, public: false },
   { to: "/communities", label: "Communities", icon: UsersRound, public: true },
   { to: "/hub", label: "Athlete Hub", icon: LayoutDashboard, public: false },
   { to: "/profile", label: "Profile", icon: User, public: false },

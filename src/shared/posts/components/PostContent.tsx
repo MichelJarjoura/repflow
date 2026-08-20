@@ -43,40 +43,6 @@ export function WorkoutPostContent({ volume, duration, exercises }: WorkoutConte
   );
 }
 
-type RunContentProps = {
-  routeImg: string;
-  distance: string;
-  pace: string;
-};
-
-export function RunPostContent({ routeImg, distance, pace }: RunContentProps) {
-  return (
-    <div className="relative aspect-video bg-elevated">
-      <img
-        src={routeImg}
-        alt={`Run route — ${distance}`}
-        width={1280}
-        height={720}
-        loading="lazy"
-        className="w-full h-full object-cover"
-      />
-      <div className="absolute bottom-4 left-4 flex gap-4">
-        <Stat label="Distance" value={distance} />
-        <Stat label="Pace" value={pace} />
-      </div>
-    </div>
-  );
-
-  function Stat({ label, value }: { label: string; value: string }) {
-    return (
-      <div className="bg-surface/90 backdrop-blur px-3 py-2 rounded border border-white/10">
-        <p className="text-[8px] text-muted-foreground uppercase">{label}</p>
-        <p className="font-display text-lg">{value}</p>
-      </div>
-    );
-  }
-}
-
 type PRContentProps = {
   lift: string;
   value: string;

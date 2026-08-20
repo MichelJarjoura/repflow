@@ -1,4 +1,4 @@
-const filters = ["All", "PRs", "Workouts", "Runs", "Following"] as const;
+const filters = ["All", "PRs", "Workouts", "Following"] as const;
 
 export function FeedFilter() {
   return (
