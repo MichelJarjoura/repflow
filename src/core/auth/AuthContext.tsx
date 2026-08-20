@@ -1,4 +1,5 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   ApiError,
   authApi,
@@ -9,6 +10,11 @@ import {
   type VerifyEmailInput,
 } from "@/core/api/auth";
 import { AuthContext, type AuthContextType, type User } from "./AuthContextDefinition";
+
+const authKeys = {
+  all: ["auth"] as const,
+  me: () => [...authKeys.all, "me"] as const,
+};
 
 function messageFromError(error: unknown) {
   if (error instanceof ApiError) return error.message;
@@ -21,159 +27,136 @@ function isUnauthenticated(error: unknown) {
 }
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [user, setUser] = useState<User | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const queryClient = useQueryClient();
+  const [actionError, setActionError] = useState<string | null>(null);
+
+  const sessionQuery = useQuery({
+    queryKey: authKeys.me(),
+    queryFn: authApi.me,
+    retry: false,
+    staleTime: 5 * 60 * 1000,
+  });
+
+  const loginMutation = useMutation({
+    mutationFn: authApi.login,
+    onMutate: () => setActionError(null),
+    onSuccess: (user) => queryClient.setQueryData(authKeys.me(), user),
+    onError: (error) => setActionError(messageFromError(error)),
+  });
+
+  const registerMutation = useMutation({
+    mutationFn: authApi.register,
+    onMutate: () => setActionError(null),
+    onSuccess: (user) => {
+      if (user) queryClient.setQueryData(authKeys.me(), user);
+    },
+    onError: (error) => setActionError(messageFromError(error)),
+  });
+
+  const verifyMutation = useMutation({
+    mutationFn: authApi.verifyEmail,
+    onMutate: () => setActionError(null),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: authKeys.me() }),
+    onError: (error) => setActionError(messageFromError(error)),
+  });
+
+  const forgotMutation = useMutation({
+    mutationFn: authApi.forgotPassword,
+    onMutate: () => setActionError(null),
+    onError: (error) => setActionError(messageFromError(error)),
+  });
+
+  const resetMutation = useMutation({
+    mutationFn: authApi.resetPassword,
+    onMutate: () => setActionError(null),
+    onError: (error) => setActionError(messageFromError(error)),
+  });
+
+  const logoutMutation = useMutation({
+    mutationFn: authApi.logout,
+    onMutate: () => setActionError(null),
+    onError: (error) => setActionError(messageFromError(error)),
+    onSettled: () => {
+      clearSessionToken();
+      queryClient.removeQueries({ queryKey: authKeys.all });
+    },
+  });
 
   const refreshUser = useCallback(async () => {
     try {
-      const authenticatedUser = await authApi.me();
-      setUser(authenticatedUser);
-      return authenticatedUser;
-    } catch (refreshError) {
-      setUser(null);
-      if (isUnauthenticated(refreshError)) clearSessionToken();
+      return await queryClient.fetchQuery({ queryKey: authKeys.me(), queryFn: authApi.me });
+    } catch (error) {
+      if (isUnauthenticated(error)) clearSessionToken();
+      queryClient.setQueryData<User | null>(authKeys.me(), null);
       return null;
     }
-  }, []);
+  }, [queryClient]);
 
-  useEffect(() => {
-    let active = true;
-    const initialize = async () => {
-      try {
-        const authenticatedUser = await authApi.me();
-        if (active) setUser(authenticatedUser);
-      } catch (initializeError) {
-        if (isUnauthenticated(initializeError)) clearSessionToken();
-        if (active) setUser(null);
-      } finally {
-        if (active) setIsLoading(false);
-      }
-    };
-    void initialize();
-    return () => {
-      active = false;
-    };
-  }, []);
+  const clearError = useCallback(() => {
+    setActionError(null);
+    loginMutation.reset();
+    registerMutation.reset();
+    verifyMutation.reset();
+    forgotMutation.reset();
+    resetMutation.reset();
+    logoutMutation.reset();
+  }, [
+    forgotMutation,
+    loginMutation,
+    logoutMutation,
+    registerMutation,
+    resetMutation,
+    verifyMutation,
+  ]);
 
-  const login = useCallback(async (input: LoginInput) => {
-    setIsLoading(true);
-    setError(null);
-    try {
-      const authenticatedUser = await authApi.login(input);
-      setUser(authenticatedUser);
-    } catch (loginError) {
-      const message = messageFromError(loginError);
-      setError(message);
-      throw loginError;
-    } finally {
-      setIsLoading(false);
-    }
-  }, []);
-
-  const register = useCallback(async (input: RegisterInput) => {
-    setIsLoading(true);
-    setError(null);
-    try {
-      const authenticatedUser = await authApi.register(input);
-      setUser(authenticatedUser);
-      return authenticatedUser;
-    } catch (registerError) {
-      const message = messageFromError(registerError);
-      setError(message);
-      throw registerError;
-    } finally {
-      setIsLoading(false);
-    }
-  }, []);
-
-  const verifyEmail = useCallback(
-    async (input: VerifyEmailInput) => {
-      setIsLoading(true);
-      setError(null);
-      try {
-        await authApi.verifyEmail(input);
-        await refreshUser();
-      } catch (verifyError) {
-        const message = messageFromError(verifyError);
-        setError(message);
-        throw verifyError;
-      } finally {
-        setIsLoading(false);
-      }
-    },
-    [refreshUser],
-  );
-
-  const forgotPassword = useCallback(async (email: string) => {
-    setIsLoading(true);
-    setError(null);
-    try {
-      await authApi.forgotPassword(email);
-    } catch (forgotError) {
-      const message = messageFromError(forgotError);
-      setError(message);
-      throw forgotError;
-    } finally {
-      setIsLoading(false);
-    }
-  }, []);
-
-  const resetPassword = useCallback(async (input: ResetPasswordInput) => {
-    setIsLoading(true);
-    setError(null);
-    try {
-      await authApi.resetPassword(input);
-    } catch (resetError) {
-      const message = messageFromError(resetError);
-      setError(message);
-      throw resetError;
-    } finally {
-      setIsLoading(false);
-    }
-  }, []);
-
-  const logout = useCallback(async () => {
-    setIsLoading(true);
-    setError(null);
-    try {
-      await authApi.logout();
-    } catch (logoutError) {
-      const message = messageFromError(logoutError);
-      setError(message);
-    } finally {
-      clearSessionToken();
-      setUser(null);
-      setIsLoading(false);
-    }
-  }, []);
+  const isLoading =
+    sessionQuery.isLoading ||
+    loginMutation.isPending ||
+    registerMutation.isPending ||
+    verifyMutation.isPending ||
+    forgotMutation.isPending ||
+    resetMutation.isPending ||
+    logoutMutation.isPending;
+  const user = sessionQuery.data ?? null;
 
   const value = useMemo<AuthContextType>(
     () => ({
       user,
       isAuthenticated: Boolean(user),
       isLoading,
-      error,
-      login,
-      register,
-      verifyEmail,
-      forgotPassword,
-      resetPassword,
-      logout,
+      error: actionError,
+      login: async (input: LoginInput) => {
+        await loginMutation.mutateAsync(input);
+      },
+      register: (input: RegisterInput) => registerMutation.mutateAsync(input),
+      verifyEmail: async (input: VerifyEmailInput) => {
+        await verifyMutation.mutateAsync(input);
+        await refreshUser();
+      },
+      forgotPassword: async (email: string) => {
+        await forgotMutation.mutateAsync(email);
+      },
+      resetPassword: async (input: ResetPasswordInput) => {
+        await resetMutation.mutateAsync(input);
+      },
+      logout: async () => {
+        await logoutMutation.mutateAsync();
+      },
       refreshUser,
-      clearError: () => setError(null),
+      clearError,
     }),
     [
-      error,
-      forgotPassword,
+      actionError,
+      clearError,
+      forgotMutation,
       isLoading,
-      login,
-      logout,
+      loginMutation,
+      logoutMutation,
       refreshUser,
-      register,
-      resetPassword,
+      registerMutation,
+      resetMutation,
       user,
-      verifyEmail,
+      verifyMutation,
     ],
   );
 

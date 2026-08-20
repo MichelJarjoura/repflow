@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import * as Dialog from "@radix-ui/react-dialog";
 import {
   ArrowLeft,
@@ -16,6 +16,7 @@ import {
 } from "lucide-react";
 import { useAuth } from "@/core/auth/useAuth";
 import { AuthModal } from "@/core/auth/components/AuthModal";
+import { useCommunityData } from "./communityQueries";
 
 type CommunityTone = "brand" | "violet" | "amber";
 
@@ -50,39 +51,6 @@ type CommunityPost = {
   createdAt: string;
 };
 
-const starterCommunities: Community[] = [
-  {
-    id: "iron-collective",
-    name: "Iron Collective",
-    description:
-      "A focused space for lifters who show up, track the work, and build strength together.",
-    members: 1284,
-    category: "Strength training",
-    tone: "brand",
-    initials: "IC",
-    joined: true,
-  },
-  {
-    id: "barbell-club",
-    name: "The Barbell Club",
-    description:
-      "Technique, training blocks, and hard-earned personal records for serious barbell athletes.",
-    members: 846,
-    category: "Powerlifting",
-    tone: "violet",
-    initials: "BC",
-  },
-  {
-    id: "weekend-warriors",
-    name: "Weekend Warriors",
-    description: "A supportive crew for building consistency around a busy schedule.",
-    members: 2196,
-    category: "General fitness",
-    tone: "amber",
-    initials: "WW",
-  },
-];
-
 const starterChallenges: Challenge[] = [
   {
     id: "million-kg",
@@ -108,10 +76,6 @@ const starterChallenges: Challenge[] = [
   },
 ];
 
-const communityStoreKey = "repflow_communities";
-const postStoreKey = "repflow_community_posts";
-const challengeStoreKey = "repflow_joined_challenges";
-
 function formatNumber(value: number) {
   return new Intl.NumberFormat("en-US", { maximumFractionDigits: 0 }).format(value);
 }
@@ -134,56 +98,23 @@ function toneClasses(tone: CommunityTone) {
 
 export function CommunityPage() {
   const { user, isAuthenticated } = useAuth();
-  const [communities, setCommunities] = useState<Community[]>(starterCommunities);
-  const [posts, setPosts] = useState<Record<string, CommunityPost[]>>({});
-  const [joinedChallenges, setJoinedChallenges] = useState<string[]>([]);
+  const {
+    communities,
+    posts,
+    joinedChallenges,
+    challengeProgress,
+    createCommunity,
+    joinCommunity: joinCommunityMutation,
+    toggleChallenge: toggleChallengeMutation,
+    addContribution: addContributionMutation,
+    publishPost: publishPostMutation,
+  } = useCommunityData();
   const [selectedCommunityId, setSelectedCommunityId] = useState<string | null>(null);
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [isAuthOpen, setIsAuthOpen] = useState(false);
   const [search, setSearch] = useState("");
   const [postBody, setPostBody] = useState("");
   const [contribution, setContribution] = useState<Record<string, string>>({});
-  const [challengeProgress, setChallengeProgress] = useState<Record<string, number>>({});
-
-  useEffect(() => {
-    const storedCommunities = localStorage.getItem(communityStoreKey);
-    const storedPosts = localStorage.getItem(postStoreKey);
-    const storedChallenges = localStorage.getItem(challengeStoreKey);
-
-    if (storedCommunities) {
-      try {
-        setCommunities(JSON.parse(storedCommunities) as Community[]);
-      } catch {
-        localStorage.removeItem(communityStoreKey);
-      }
-    }
-    if (storedPosts) {
-      try {
-        setPosts(JSON.parse(storedPosts) as Record<string, CommunityPost[]>);
-      } catch {
-        localStorage.removeItem(postStoreKey);
-      }
-    }
-    if (storedChallenges) {
-      try {
-        setJoinedChallenges(JSON.parse(storedChallenges) as string[]);
-      } catch {
-        localStorage.removeItem(challengeStoreKey);
-      }
-    }
-  }, []);
-
-  useEffect(() => {
-    localStorage.setItem(communityStoreKey, JSON.stringify(communities));
-  }, [communities]);
-
-  useEffect(() => {
-    localStorage.setItem(postStoreKey, JSON.stringify(posts));
-  }, [posts]);
-
-  useEffect(() => {
-    localStorage.setItem(challengeStoreKey, JSON.stringify(joinedChallenges));
-  }, [joinedChallenges]);
 
   const selectedCommunity =
     communities.find((community) => community.id === selectedCommunityId) ?? null;
@@ -207,57 +138,35 @@ export function CommunityPage() {
 
   const joinCommunity = (id: string) => {
     requireAuthentication(() => {
-      setCommunities((current) =>
-        current.map((community) =>
-          community.id === id
-            ? {
-                ...community,
-                joined: true,
-                members: community.joined ? community.members : community.members + 1,
-              }
-            : community,
-        ),
-      );
+      void joinCommunityMutation(id);
       setSelectedCommunityId(id);
     });
   };
 
   const toggleChallenge = (challengeId: string) => {
     requireAuthentication(() => {
-      setJoinedChallenges((current) =>
-        current.includes(challengeId)
-          ? current.filter((id) => id !== challengeId)
-          : [...current, challengeId],
-      );
+      void toggleChallengeMutation(challengeId);
     });
   };
 
   const addContribution = (challengeId: string, target: number) => {
     const amount = Number(contribution[challengeId]);
     if (!Number.isFinite(amount) || amount <= 0) return;
-    setChallengeProgress((current) => ({
-      ...current,
-      [challengeId]: Math.min(target, (current[challengeId] ?? 0) + amount),
-    }));
+    void addContributionMutation({ challengeId, amount, target });
     setContribution((current) => ({ ...current, [challengeId]: "" }));
   };
 
   const publishPost = () => {
     const body = postBody.trim();
     if (!body || !selectedCommunity) return;
-    const author = user?.name ?? "Repflow member";
-    const handle = user?.username ?? "@member";
     const post: CommunityPost = {
       id: `${Date.now()}`,
-      author,
-      handle,
+      author: user?.name ?? "Repflow member",
+      handle: user?.username ?? "@member",
       body,
       createdAt: new Date().toISOString(),
     };
-    setPosts((current) => ({
-      ...current,
-      [selectedCommunity.id]: [post, ...(current[selectedCommunity.id] ?? [])],
-    }));
+    void publishPostMutation({ communityId: selectedCommunity.id, post });
     setPostBody("");
   };
 
@@ -383,7 +292,7 @@ export function CommunityPage() {
         open={isCreateOpen}
         onOpenChange={setIsCreateOpen}
         onCreate={(community) => {
-          setCommunities((current) => [community, ...current]);
+          void createCommunity(community);
           setSelectedCommunityId(community.id);
         }}
       />

@@ -1,12 +1,10 @@
 import { IdentityCard } from "./components/IdentityCard";
 import { PRPost } from "../../shared/posts/views/PRPost";
 import { WorkoutPost } from "../../shared/posts/views/WorkoutPost";
-import { RunPost } from "../../shared/posts/views/RunPost";
 import { RightRail } from "./components/RightRail";
 import { FeedFilter } from "./components/FeedFilter";
 import avatar1 from "@/assets/avatar-1.jpg";
 import avatar2 from "@/assets/avatar-2.jpg";
-import avatar3 from "@/assets/avatar-3.jpg";
 import { useAuth } from "@/core/auth/useAuth";
 import { AuthModal } from "@/core/auth/components/AuthModal";
 import { useState } from "react";
@@ -72,14 +70,6 @@ export function FeedPage() {
             { name: "Weighted Dips", detail: "4 × 12 @ BW+15" },
             { name: "Lateral Raises", detail: "3 × 15 @ 12kg" },
           ]}
-        />
-
-        <RunPost
-          avatar={avatar3}
-          name="David Vane"
-          meta="6 hours ago • Morning Recovery"
-          distance="6.4 KM"
-          pace="5:12 /KM"
         />
 
         <PRPost

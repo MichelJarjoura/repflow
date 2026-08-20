@@ -121,7 +121,7 @@ function RootShell({ children }: { children: React.ReactNode }) {
         <HeadContent />
       </head>
       <body>
-        <AuthProvider>{children}</AuthProvider>
+        {children}
         <Scripts />
       </body>
     </html>
@@ -133,12 +133,14 @@ function RootComponent() {
 
   return (
     <QueryClientProvider client={queryClient}>
-      <div className="min-h-screen bg-background text-foreground flex flex-col md:flex-row">
-        <AppNav />
-        <div className="flex-1 md:pl-20 xl:pl-64 pb-16 md:pb-0">
-          <Outlet />
+      <AuthProvider>
+        <div className="min-h-screen bg-background text-foreground flex flex-col md:flex-row">
+          <AppNav />
+          <div className="flex-1 md:pl-20 xl:pl-64 pb-16 md:pb-0">
+            <Outlet />
+          </div>
         </div>
-      </div>
+      </AuthProvider>
     </QueryClientProvider>
   );
 }

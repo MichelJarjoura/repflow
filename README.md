@@ -53,7 +53,7 @@ For cookie sessions, the server can omit a token and identify the user through `
 
 The **Communities** tab replaces a standalone challenges destination. It supports discovery, creation, membership, community feeds, group challenges, joining challenges, and adding challenge contributions. Community data is intentionally persisted in browser storage while community API endpoints are not yet specified. Authentication, however, is no longer mocked and is driven by the backend API above.
 
-When community endpoints are ready, replace the local browser-storage adapter in `src/features/communities/CommunityPage.tsx` with query/mutation calls. The UI data model already separates communities, posts, challenges, memberships, and contributions.
+Community state is now accessed through React Query in `src/features/communities/communityQueries.ts`. When community endpoints are ready, replace only that temporary browser-storage adapter with API calls; the existing query keys and mutations will keep the page API unchanged. The UI data model already separates communities, posts, challenges, memberships, and contributions.
 
 ## Quality checks
 
