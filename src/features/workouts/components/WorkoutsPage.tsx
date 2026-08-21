@@ -1,259 +1,163 @@
-import { WorkoutStats } from "./WorkoutStats";
+import { Calendar, Clock3, Dumbbell, TrendingUp, Zap } from "lucide-react";
+import { useAuth } from "@/core/auth/useAuth";
+import { ConsistencyCalendar } from "./ConsistencyCalendar";
 import { LogWorkoutCard } from "./LogWorkoutCard";
 import { LogPRCard } from "./LogPRCard";
-import { ConsistencyCalendar } from "./ConsistencyCalendar";
-import { Calendar, TrendingUp, Zap, Target } from "lucide-react";
-import { useAuth } from "@/core/auth/useAuth";
-import { useProfile } from "@/features/profile/useProfile";
+import { useLocalWorkouts } from "../useLocalWorkouts";
 
 export function WorkoutsPage() {
-  const { user, isAuthenticated } = useAuth();
-  const { sessions, physicalData } = useProfile(user?.id, isAuthenticated);
-  const records = physicalData?.personalRecords ?? [];
-  const topRecords = [...records]
-    .sort((left, right) => right.maxWeightKg - left.maxWeightKg)
-    .slice(0, 3);
-  const maxLoad = topRecords[0]?.maxWeightKg ?? 0;
+  const { user } = useAuth();
+  const { workouts, stats } = useLocalWorkouts(user?.id);
+  const topLifts = stats.personalRecords.slice(0, 4);
 
   return (
-    <main className="max-w-6xl mx-auto px-6 py-8 space-y-8">
-      {/* Header Section */}
-      <header className="flex flex-col md:flex-row md:items-end justify-between gap-4 border-b border-border pb-8">
+    <main className="mx-auto max-w-6xl space-y-8 px-5 py-8 sm:px-6">
+      <header className="flex flex-col gap-5 border-b border-border pb-8 md:flex-row md:items-end md:justify-between">
         <div>
-          <h1 className="font-display text-5xl tracking-tighter">PERFORMANCE TRACKER</h1>
-          <p className="text-sm text-muted-foreground mt-2 uppercase tracking-[0.2em] font-mono">
-            Precision Training &middot; Data Verified
+          <p className="text-xs font-mono uppercase tracking-[0.24em] text-brand">
+            Your training data
+          </p>
+          <h1 className="mt-2 font-display text-5xl tracking-tighter">PERFORMANCE</h1>
+          <p className="mt-3 max-w-xl text-sm leading-6 text-muted-foreground">
+            Every saved workout updates this dashboard instantly. Your data stays on this device
+            until a full workout-sync API is available.
           </p>
         </div>
-        <div className="flex items-center gap-6">
-          <StatMini
-            label="Sessions"
-            value={String(sessions.length)}
-            icon={<Calendar size={14} />}
-          />
-          <StatMini
-            label="Records"
-            value={String(records.length)}
-            icon={<TrendingUp size={14} />}
-            trend="up"
-          />
-          <StatMini
-            label="Max load"
-            value={maxLoad ? `${maxLoad} KG` : "—"}
-            icon={<Zap size={14} />}
-          />
-        </div>
+        <p className="rounded-2xl border border-border bg-card px-4 py-3 text-xs font-mono uppercase tracking-widest text-muted-foreground">
+          Local-first training log
+        </p>
       </header>
 
-      {/* Consistency Calendar */}
-      <ConsistencyCalendar />
+      <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+        <Metric
+          icon={Calendar}
+          label="Sessions"
+          value={String(stats.totalSessions)}
+          detail="All saved workouts"
+        />
+        <Metric
+          icon={Zap}
+          label="Total volume"
+          value={stats.totalVolume ? `${Math.round(stats.totalVolume).toLocaleString()} kg` : "—"}
+          detail="Sets × reps × weight"
+        />
+        <Metric
+          icon={Clock3}
+          label="Avg. session"
+          value={stats.averageDuration ? `${stats.averageDuration} min` : "—"}
+          detail="Training time"
+        />
+        <Metric
+          icon={TrendingUp}
+          label="Top lifts"
+          value={String(topLifts.length)}
+          detail="Personal bests"
+        />
+      </section>
 
-      {/* Main Stats Grid */}
-      <WorkoutStats />
+      <ConsistencyCalendar workouts={workouts} streak={stats.streak} />
 
-      {/* Logging & Deep Stats */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-        {/* Left Column: Logging */}
-        <div className="lg:col-span-7 space-y-6">
-          <div className="flex items-center justify-between mb-2">
-            <h2 className="font-display text-2xl tracking-tight">ACTION CENTER</h2>
-          </div>
+      <div className="grid gap-8 lg:grid-cols-12">
+        <section className="space-y-6 lg:col-span-7">
           <LogWorkoutCard />
           <LogPRCard />
-        </div>
-
-        {/* Right Column: Heavy Lifting & PR Stats */}
-        <aside className="lg:col-span-5 space-y-6">
-          <div className="flex items-center justify-between mb-2">
-            <h2 className="font-display text-2xl tracking-tight">LIFTING PERFORMANCE</h2>
-          </div>
-
-          <div className="bg-card border border-border rounded-xl p-6 space-y-8">
-            {/* PR Progress Section */}
-            <div>
-              <div className="flex justify-between items-center mb-6">
-                <span className="text-[10px] font-mono text-muted-foreground uppercase tracking-widest flex items-center gap-2">
-                  <Target size={12} className="text-brand" /> 1RM Progression
-                </span>
-                <span className="text-[10px] font-mono text-brand">TOP 3 LIFTS</span>
+        </section>
+        <aside className="space-y-6 lg:col-span-5">
+          <section className="rounded-3xl border border-border bg-card p-6">
+            <div className="flex items-center justify-between gap-3">
+              <div>
+                <p className="text-xs font-mono uppercase tracking-[0.2em] text-brand">
+                  Strength board
+                </p>
+                <h2 className="mt-2 font-display text-3xl tracking-tight">TOP LIFTS</h2>
               </div>
-
-              <div className="space-y-6">
-                {topRecords.length === 0 ? (
-                  <p className="text-sm text-muted-foreground">
-                    Log workout sessions to build your personal-record history.
-                  </p>
-                ) : (
-                  topRecords.map((record) => (
-                    <LiftProgress
-                      key={record.exerciseId}
-                      label={record.exerciseName}
-                      current={record.maxWeightKg}
-                      previous={0}
-                      color="brand"
-                    />
-                  ))
-                )}
-              </div>
+              <Dumbbell className="text-brand" size={25} />
             </div>
-
-            {/* Heavy Volume Intensity */}
-            <div className="pt-8 border-t border-border">
-              <h4 className="text-[10px] font-mono text-muted-foreground uppercase tracking-widest mb-4">
-                Strength Intensity
-              </h4>
-              <div className="space-y-4">
-                <div className="flex justify-between items-end">
-                  <div className="space-y-1">
-                    <p className="text-[10px] text-muted-foreground uppercase tracking-widest">
-                      Avg. Intensity
-                    </p>
-                    <p className="text-3xl font-display">{sessions.length}</p>
-                  </div>
-                  <div className="text-right space-y-1">
-                    <p className="text-[10px] text-muted-foreground uppercase tracking-widest">
-                      PR Frequency
-                    </p>
-                    <p className="text-xl font-display text-brand">{records.length} total</p>
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-2 gap-3 pt-2">
-                  <div className="bg-surface/60 p-4 rounded-xl border border-white/5 group hover:border-brand/30 transition-colors">
-                    <p className="text-[10px] text-muted-foreground uppercase tracking-widest mb-1">
-                      Total PRs
-                    </p>
-                    <p className="text-2xl font-display">{records.length}</p>
-                  </div>
-                  <div className="bg-surface/60 p-4 rounded-xl border border-white/5 group hover:border-brand/30 transition-colors">
-                    <p className="text-[10px] text-muted-foreground uppercase tracking-widest mb-1">
-                      Max Load
-                    </p>
-                    <p className="text-2xl font-display text-brand">
-                      {maxLoad || "—"}
-                      {maxLoad ? <span className="text-sm ml-1">KG</span> : null}
+            {topLifts.length ? (
+              <div className="mt-6 space-y-4">
+                {topLifts.map((lift, index) => (
+                  <div
+                    key={lift.exercise}
+                    className="flex items-center gap-4 rounded-2xl border border-border bg-surface/25 p-4"
+                  >
+                    <span className="grid size-9 place-items-center rounded-full bg-brand/10 font-display text-lg text-brand">
+                      {index + 1}
+                    </span>
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate text-sm font-bold">{lift.exercise}</p>
+                      <p className="mt-1 text-xs text-muted-foreground">Best recorded load</p>
+                    </div>
+                    <p className="font-display text-2xl text-brand">
+                      {lift.weight} <span className="text-sm">kg</span>
                     </p>
                   </div>
-                </div>
+                ))}
               </div>
-            </div>
-
-            {/* Recent PR Activity Log */}
-            <div className="pt-6 border-t border-border">
-              <h4 className="text-[10px] font-mono text-muted-foreground uppercase tracking-widest mb-4">
-                Milestones
-              </h4>
-              <div className="space-y-3">
-                {records.length === 0 ? (
-                  <p className="text-sm text-muted-foreground">
-                    No backend milestones recorded yet.
-                  </p>
-                ) : (
-                  records
-                    .slice(0, 3)
-                    .map((record) => (
-                      <MilestoneItem
-                        key={`${record.exerciseId}-${record.date}`}
-                        lift={record.exerciseName}
-                        weight={`${record.maxWeightKg}kg`}
-                        date={new Date(record.date).toLocaleDateString()}
-                      />
-                    ))
-                )}
+            ) : (
+              <EmptyState text="Log weighted exercises to build your strength board." />
+            )}
+          </section>
+          <section className="rounded-3xl border border-border bg-card p-6">
+            <p className="text-xs font-mono uppercase tracking-[0.2em] text-brand">
+              Recent training
+            </p>
+            <h2 className="mt-2 font-display text-3xl tracking-tight">WORKOUT HISTORY</h2>
+            {workouts.length ? (
+              <div className="mt-6 space-y-3">
+                {workouts.slice(0, 4).map((workout) => (
+                  <div
+                    key={workout.id}
+                    className="flex items-center justify-between gap-4 rounded-2xl border border-border bg-surface/25 p-4"
+                  >
+                    <div className="min-w-0">
+                      <p className="truncate font-bold">{workout.title}</p>
+                      <p className="mt-1 text-xs text-muted-foreground">
+                        {workout.exercises.length} exercise
+                        {workout.exercises.length === 1 ? "" : "s"} ·{" "}
+                        {new Date(workout.createdAt).toLocaleDateString()}
+                      </p>
+                    </div>
+                    <p className="shrink-0 font-mono text-sm text-brand">{workout.duration} min</p>
+                  </div>
+                ))}
               </div>
-            </div>
-          </div>
+            ) : (
+              <EmptyState text="Your saved workouts will appear here." />
+            )}
+          </section>
         </aside>
       </div>
     </main>
   );
 }
 
-function LiftProgress({
-  label,
-  current,
-  previous,
-  color,
-}: {
-  label: string;
-  current: number;
-  previous: number;
-  color: "brand" | "muted";
-}) {
-  const diff = current - previous;
-  return (
-    <div className="space-y-2">
-      <div className="flex justify-between items-end">
-        <div>
-          <p className="text-xs text-foreground/80 mb-0.5">{label}</p>
-          <p className="text-2xl font-display tracking-tight">{current} KG</p>
-        </div>
-        {diff > 0 && <span className="text-[10px] font-mono text-brand mb-1">+{diff} KG</span>}
-      </div>
-      <div className="h-1.5 w-full bg-elevated rounded-full overflow-hidden">
-        <div
-          className={`h-full transition-all duration-700 ${color === "brand" ? "bg-brand" : "bg-muted-foreground/30"}`}
-          style={{ width: `${(current / 250) * 100}%` }}
-        />
-      </div>
-    </div>
-  );
-}
-
-function MilestoneItem({ lift, weight, date }: { lift: string; weight: string; date: string }) {
-  return (
-    <div className="flex justify-between items-center bg-surface/40 p-3 rounded-lg border border-white/5">
-      <div className="flex items-center gap-3">
-        <div className="size-2 rounded-full bg-brand" />
-        <span className="text-sm italic">{lift}</span>
-      </div>
-      <div className="text-right">
-        <span className="text-sm font-display block leading-none">{weight}</span>
-        <span className="text-[8px] font-mono text-muted-foreground uppercase">{date}</span>
-      </div>
-    </div>
-  );
-}
-
-function StatMini({
+function Metric({
+  icon: Icon,
   label,
   value,
-  icon,
-  trend,
+  detail,
 }: {
+  icon: typeof Calendar;
   label: string;
   value: string;
-  icon: React.ReactNode;
-  trend?: "up" | "down";
+  detail: string;
 }) {
   return (
-    <div className="flex flex-col items-start gap-1">
-      <div className="flex items-center gap-1.5 text-[10px] font-mono text-muted-foreground uppercase tracking-widest">
-        {icon} {label}
-      </div>
-      <div className="flex items-center gap-2">
-        <span className="text-2xl font-display tracking-tight">{value}</span>
-        {trend === "up" && <span className="size-1.5 rounded-full bg-brand animate-pulse" />}
-      </div>
+    <div className="rounded-2xl border border-border bg-card p-5">
+      <Icon size={18} className="text-brand" />
+      <p className="mt-4 text-xs font-mono uppercase tracking-widest text-muted-foreground">
+        {label}
+      </p>
+      <p className="mt-1 font-display text-3xl tracking-tight">{value}</p>
+      <p className="mt-1 text-xs text-muted-foreground">{detail}</p>
     </div>
   );
 }
 
-function RecoveryItem({ label, progress }: { label: string; progress: number }) {
+function EmptyState({ text }: { text: string }) {
   return (
-    <div className="space-y-1.5">
-      <div className="flex justify-between text-[10px] font-mono">
-        <span className="text-foreground/80">{label}</span>
-        <span className={progress < 30 ? "text-destructive" : "text-muted-foreground"}>
-          {progress}%
-        </span>
-      </div>
-      <div className="h-1 w-full bg-elevated rounded-full overflow-hidden">
-        <div
-          className={`h-full transition-all duration-500 ${progress < 30 ? "bg-destructive" : "bg-brand"}`}
-          style={{ width: `${progress}%` }}
-        />
-      </div>
-    </div>
+    <p className="mt-6 rounded-2xl border border-dashed border-border bg-surface/20 p-5 text-sm leading-6 text-muted-foreground">
+      {text}
+    </p>
   );
 }

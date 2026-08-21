@@ -1,143 +1,144 @@
 import { useMemo } from "react";
-import {
-  subWeeks,
-  startOfWeek,
-  addDays,
-  format,
-  isSameMonth,
-  eachDayOfInterval,
-  startOfToday,
-  subYears,
-} from "date-fns";
+import { addDays, eachDayOfInterval, format, startOfToday, startOfWeek, subWeeks } from "date-fns";
+import type { LocalWorkout } from "../useLocalWorkouts";
 
-// Sample logged days (yyyy-MM-dd format)
-const loggedDays = new Set<string>([
-  format(startOfToday(), "yyyy-MM-dd"),
-  format(addDays(startOfToday(), -1), "yyyy-MM-dd"),
-  format(addDays(startOfToday(), -2), "yyyy-MM-dd"),
-  format(addDays(startOfToday(), -3), "yyyy-MM-dd"),
-  format(addDays(subWeeks(startOfToday(), 5), 5), "yyyy-MM-dd"),
-  format(addDays(subWeeks(startOfToday(), 4), 2), "yyyy-MM-dd"),
-  format(addDays(subWeeks(startOfToday(), 6), 3), "yyyy-MM-dd"),
-  format(addDays(subWeeks(startOfToday(), 7), 4), "yyyy-MM-dd"),
-  format(addDays(subWeeks(startOfToday(), 9), 1), "yyyy-MM-dd"),
-  format(addDays(subWeeks(startOfToday(), 10), 4), "yyyy-MM-dd"),
-  format(addDays(subWeeks(startOfToday(), 11), 5), "yyyy-MM-dd"),
-  format(addDays(subWeeks(startOfToday(), 10), 6), "yyyy-MM-dd"),
-  format(addDays(subWeeks(startOfToday(), 12), 2), "yyyy-MM-dd"),
-  format(addDays(subWeeks(startOfToday(), 11), 3), "yyyy-MM-dd"),
-]);
+type ConsistencyCalendarProps = {
+  workouts: LocalWorkout[];
+  streak: number;
+};
 
-export function ConsistencyCalendar() {
-  const { weeks, monthLabels, totalSessions } = useMemo(() => {
+function workoutVolume(workout: LocalWorkout) {
+  return workout.exercises.reduce(
+    (total, exercise) =>
+      total +
+      Number(exercise.sets || 0) * Number(exercise.reps || 0) * Number(exercise.weight || 0),
+    0,
+  );
+}
+
+export function ConsistencyCalendar({ workouts, streak }: ConsistencyCalendarProps) {
+  const { weeks, monthLabels, totalSessions, volumeByDay, maxVolume } = useMemo(() => {
     const today = startOfToday();
     const startDate = startOfWeek(subWeeks(today, 52));
-    const endDate = today;
+    const days = eachDayOfInterval({ start: startDate, end: today });
+    const volumeMap = new Map<string, number>();
+    workouts.forEach((workout) => {
+      const key = format(new Date(workout.createdAt), "yyyy-MM-dd");
+      volumeMap.set(key, (volumeMap.get(key) ?? 0) + workoutVolume(workout));
+    });
 
-    const days = eachDayOfInterval({ start: startDate, end: endDate });
-
-    const weeksData = [];
-    let currentWeek: { day: Date; intensity: number }[] = [];
-    let total = 0;
-
+    const weeksData: Date[][] = [];
+    let currentWeek: Date[] = [];
     const labels: { month: string; index: number }[] = [];
     let lastMonth = -1;
     let lastYear = -1;
-
     days.forEach((day) => {
-      const intensity = Math.floor(Math.random() * 5);
-      if (intensity > 0) total++;
-
-      if (currentWeek.length === 0) {
+      if (!currentWeek.length) {
         const month = day.getMonth();
         const year = day.getFullYear();
         if (month !== lastMonth) {
-          const label =
-            year !== lastYear ? `${format(day, "MMM")} '${format(day, "yy")}` : format(day, "MMM");
-          labels.push({ month: label, index: weeksData.length });
+          labels.push({
+            month:
+              year !== lastYear
+                ? `${format(day, "MMM")} '${format(day, "yy")}`
+                : format(day, "MMM"),
+            index: weeksData.length,
+          });
           lastMonth = month;
           lastYear = year;
         }
       }
-      currentWeek.push({ day, intensity });
-
+      currentWeek.push(day);
       if (currentWeek.length === 7) {
         weeksData.push(currentWeek);
         currentWeek = [];
       }
     });
-
-    if (currentWeek.length > 0) {
-      weeksData.push(currentWeek);
-    }
-
-    return { weeks: weeksData, monthLabels: labels, totalSessions: total };
-  }, []);
+    if (currentWeek.length) weeksData.push(currentWeek);
+    return {
+      weeks: weeksData,
+      monthLabels: labels,
+      totalSessions: workouts.length,
+      volumeByDay: volumeMap,
+      maxVolume: Math.max(...volumeMap.values(), 0),
+    };
+  }, [workouts]);
 
   return (
-    <div className="bg-card border border-border rounded-xl p-6">
-      <div className="flex justify-between items-center mb-6">
+    <section className="rounded-3xl border border-border bg-card p-5 sm:p-6">
+      <div className="mb-6 flex flex-col justify-between gap-3 sm:flex-row sm:items-center">
         <div>
-          <h3 className="font-display text-lg tracking-tight">GYM CONSISTENCY</h3>
-          <p className="text-[10px] font-mono text-muted-foreground uppercase tracking-widest">
-            Training frequency over the past year
+          <h3 className="font-display text-2xl tracking-tight">GYM CONSISTENCY</h3>
+          <p className="mt-1 text-[10px] font-mono uppercase tracking-widest text-muted-foreground">
+            Your logged training over the past year
+          </p>
+        </div>
+        <div className="rounded-xl border border-brand/20 bg-brand/5 px-4 py-2 text-right">
+          <p className="text-[10px] font-mono uppercase tracking-widest text-muted-foreground">
+            Current streak
+          </p>
+          <p className="font-display text-2xl text-brand">
+            {streak} day{streak === 1 ? "" : "s"}
           </p>
         </div>
       </div>
-
       <div className="overflow-x-auto pb-2">
         <div className="min-w-max">
-          {/* Month Labels */}
-          <div className="relative mb-2 flex h-3 ml-9 font-mono text-[9px] text-muted-foreground">
-            {monthLabels.map((label, i) => (
-              <span key={i} className="absolute" style={{ left: `${label.index * 14}px` }}>
+          <div className="relative mb-2 ml-9 flex h-3 font-mono text-[9px] text-muted-foreground">
+            {monthLabels.map((label) => (
+              <span
+                key={`${label.month}-${label.index}`}
+                className="absolute"
+                style={{ left: `${label.index * 14}px` }}
+              >
                 {label.month}
               </span>
             ))}
           </div>
-
           <div className="flex gap-1">
-            {/* Day Labels */}
-            <div className="flex flex-col gap-1 text-[9px] font-mono text-muted-foreground pr-2 w-8">
-              <span className="h-2.5 flex items-center"></span>
-              <span className="h-2.5 flex items-center">Mon</span>
-              <span className="h-2.5 flex items-center"></span>
-              <span className="h-2.5 flex items-center">Wed</span>
-              <span className="h-2.5 flex items-center"></span>
-              <span className="h-2.5 flex items-center">Fri</span>
-              <span className="h-2.5 flex items-center"></span>
+            <div className="flex w-8 flex-col gap-1 pr-2 text-[9px] font-mono text-muted-foreground">
+              <span className="flex h-2.5 items-center" />
+              <span className="flex h-2.5 items-center">Mon</span>
+              <span className="flex h-2.5 items-center" />
+              <span className="flex h-2.5 items-center">Wed</span>
+              <span className="flex h-2.5 items-center" />
+              <span className="flex h-2.5 items-center">Fri</span>
+              <span className="flex h-2.5 items-center" />
             </div>
-
-            {/* Grid */}
             <div className="flex gap-1">
-              {weeks.map((week, i) => (
-                <div key={i} className="flex flex-col gap-1">
-                  {week.map((dayData, j) => (
-                    <div
-                      key={j}
-                      className={`size-2.5 rounded-sm transition-colors cursor-pointer hover:ring-1 hover:ring-white/20 ${getColorOfDay(dayData.day)}`}
-                      title={`${format(dayData.day, "MMM d, yyyy")}`}
-                    />
-                  ))}
+              {weeks.map((week, weekIndex) => (
+                <div key={weekIndex} className="flex flex-col gap-1">
+                  {week.map((day) => {
+                    const key = format(day, "yyyy-MM-dd");
+                    const volume = volumeByDay.get(key) ?? 0;
+                    const ratio = maxVolume ? volume / maxVolume : 0;
+                    const color = !volume
+                      ? "bg-elevated"
+                      : ratio > 0.72
+                        ? "bg-brand"
+                        : ratio > 0.35
+                          ? "bg-brand/65"
+                          : "bg-brand/30";
+                    return (
+                      <div
+                        key={key}
+                        className={`size-2.5 rounded-sm transition-colors hover:ring-1 hover:ring-white/30 ${color}`}
+                        title={`${format(day, "MMM d, yyyy")}${volume ? ` · ${Math.round(volume).toLocaleString()} kg volume` : " · Rest day"}`}
+                      />
+                    );
+                  })}
                 </div>
               ))}
             </div>
           </div>
         </div>
       </div>
-
-      <div className="mt-4 flex justify-between items-center text-[10px] font-mono text-muted-foreground uppercase tracking-widest">
-        <span>{loggedDays.size} Total Sessions</span>
-        <span>Current Streak: 12 Days</span>
+      <div className="mt-5 flex items-center justify-between text-[10px] font-mono uppercase tracking-widest text-muted-foreground">
+        <span>
+          {totalSessions} total session{totalSessions === 1 ? "" : "s"}
+        </span>
+        <span>Hover a day for volume</span>
       </div>
-    </div>
+    </section>
   );
-}
-
-function getColorOfDay(day: Date) {
-  const dateKey = format(day, "yyyy-MM-dd");
-  if (loggedDays.has(dateKey)) {
-    return "bg-primary";
-  }
-  return "bg-elevated";
 }

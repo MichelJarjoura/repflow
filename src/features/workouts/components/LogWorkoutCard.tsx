@@ -4,22 +4,14 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Check, ChevronRight, Clock3, Dumbbell, LoaderCircle, Plus, Trash2, X } from "lucide-react";
 import { postApi } from "@/core/api/repflow";
 import { useAuth } from "@/core/auth/useAuth";
+import {
+  readLocalWorkouts,
+  storeLocalWorkout,
+  type LocalWorkout,
+  type LocalWorkoutExercise,
+} from "../useLocalWorkouts";
 
-type WorkoutSet = {
-  id: string;
-  exercise: string;
-  sets: string;
-  reps: string;
-  weight: string;
-};
-
-type LocalWorkout = {
-  id: string;
-  title: string;
-  duration: number;
-  createdAt: string;
-  exercises: WorkoutSet[];
-};
+type WorkoutSet = LocalWorkoutExercise;
 
 const newSet = (): WorkoutSet => ({
   id: crypto.randomUUID(),
@@ -29,24 +21,6 @@ const newSet = (): WorkoutSet => ({
   weight: "",
 });
 
-function storageKey(userId: string | undefined) {
-  return `repflow_local_workouts_${userId ?? "guest"}`;
-}
-
-function getLocalWorkouts(userId: string | undefined): LocalWorkout[] {
-  try {
-    const value = localStorage.getItem(storageKey(userId));
-    return value ? (JSON.parse(value) as LocalWorkout[]) : [];
-  } catch {
-    return [];
-  }
-}
-
-function saveLocalWorkout(userId: string | undefined, workout: LocalWorkout) {
-  const stored = getLocalWorkouts(userId);
-  localStorage.setItem(storageKey(userId), JSON.stringify([workout, ...stored].slice(0, 30)));
-}
-
 export function LogWorkoutCard() {
   const { user } = useAuth();
   const [open, setOpen] = useState(false);
@@ -55,7 +29,7 @@ export function LogWorkoutCard() {
   const [exercises, setExercises] = useState<WorkoutSet[]>([newSet()]);
   const [shareToFeed, setShareToFeed] = useState(true);
   const [notice, setNotice] = useState<string | null>(null);
-  const [savedCount, setSavedCount] = useState(() => getLocalWorkouts(user?.id).length);
+  const [savedCount, setSavedCount] = useState(() => readLocalWorkouts(user?.id).length);
   const queryClient = useQueryClient();
 
   const estimatedVolume = useMemo(
@@ -89,7 +63,7 @@ export function LogWorkoutCard() {
         createdAt: new Date().toISOString(),
         exercises: completedExercises,
       };
-      saveLocalWorkout(user?.id, workout);
+      storeLocalWorkout(user?.id, workout);
 
       let published = false;
       if (shareToFeed) {
@@ -108,7 +82,7 @@ export function LogWorkoutCard() {
       return { workout, published };
     },
     onSuccess: ({ published }) => {
-      setSavedCount(getLocalWorkouts(user?.id).length);
+      setSavedCount(readLocalWorkouts(user?.id).length);
       setNotice(
         published ? "Workout saved and shared to your feed." : "Workout saved on this device.",
       );

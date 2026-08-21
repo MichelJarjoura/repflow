@@ -1,23 +1,16 @@
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import {
-  Heart,
-  LoaderCircle,
-  MessageCircle,
-  PlusCircle,
-  RefreshCw,
-  Send,
-  Trash2,
-} from "lucide-react";
+import { Heart, LoaderCircle, MessageCircle, PlusCircle, RefreshCw, Trash2 } from "lucide-react";
 import { IdentityCard } from "./components/IdentityCard";
 import { RightRail } from "./components/RightRail";
 import { FeedFilter } from "./components/FeedFilter";
 import { PostComposer } from "./components/PostComposer";
+import { CommentDialog } from "./components/CommentDialog";
 import { useFeed } from "./useFeed";
 import { useAuth } from "@/core/auth/useAuth";
 import { AuthModal } from "@/core/auth/components/AuthModal";
 import { ApiError } from "@/core/api/client";
-import { commentsApi, postApi, userApi, type BackendPost } from "@/core/api/repflow";
+import { postApi, userApi, type BackendPost } from "@/core/api/repflow";
 import type { AuthenticatedUser } from "@/core/api/auth";
 
 function relativeTime(value: string) {
@@ -106,21 +99,7 @@ function BackendFeedPost({
   const authorName = isViewer ? viewer.name : (authorQuery.data?.username ?? "Repflow athlete");
   const authorHandle = isViewer ? viewer.username : `@${post.authorId.slice(0, 8)}`;
   const authorAvatar = isViewer ? viewer.avatar : authorQuery.data?.profilePictureUrl;
-  const [comment, setComment] = useState("");
   const queryClient = useQueryClient();
-  const comments = useQuery({
-    queryKey: ["comments", post.id],
-    queryFn: () => commentsApi.getForPost(post.id),
-    enabled: commentsOpen,
-  });
-  const addComment = useMutation({
-    mutationFn: () => postApi.addComment(post.id, comment.trim()),
-    onSuccess: () => {
-      setComment("");
-      void queryClient.invalidateQueries({ queryKey: ["comments", post.id] });
-      void queryClient.invalidateQueries({ queryKey: ["feed"] });
-    },
-  });
   const deletePost = useMutation({
     mutationFn: () => postApi.remove(post.id),
     onSuccess: () => {
@@ -189,7 +168,7 @@ function BackendFeedPost({
         </button>
         <button
           type="button"
-          onClick={() => setCommentsOpen((current) => !current)}
+          onClick={() => setCommentsOpen(true)}
           className="inline-flex items-center gap-2 transition-colors hover:text-brand"
         >
           <MessageCircle size={18} /> {post.commentsCount}
@@ -200,50 +179,7 @@ function BackendFeedPost({
           {deletePost.error.message}
         </p>
       )}
-      {commentsOpen && (
-        <div className="mt-5 border-t border-border pt-4">
-          <div className="space-y-3">
-            {comments.isLoading ? (
-              <p className="text-sm text-muted-foreground">Loading comments…</p>
-            ) : comments.data?.data.length ? (
-              comments.data.data.map((item) => (
-                <div key={item.id} className="rounded-xl bg-surface/30 p-3">
-                  <p className="text-sm">{item.content}</p>
-                  <p className="mt-1 text-[10px] text-muted-foreground">
-                    @{item.authorId.slice(0, 8)} · {relativeTime(item.createdAt)}
-                  </p>
-                </div>
-              ))
-            ) : (
-              <p className="text-sm text-muted-foreground">Be the first to comment.</p>
-            )}
-          </div>
-          <form
-            className="mt-3 flex gap-2"
-            onSubmit={(event) => {
-              event.preventDefault();
-              if (comment.trim()) addComment.mutate();
-            }}
-          >
-            <input
-              value={comment}
-              onChange={(event) => setComment(event.target.value)}
-              placeholder="Write a comment"
-              className="auth-input flex-1"
-            />
-            <button
-              type="submit"
-              disabled={!comment.trim() || addComment.isPending}
-              className="grid size-10 place-items-center rounded-xl bg-brand text-brand-foreground"
-            >
-              <Send size={16} />
-            </button>
-          </form>
-          {addComment.error && (
-            <p className="mt-2 text-xs text-destructive">{addComment.error.message}</p>
-          )}
-        </div>
-      )}
+      <CommentDialog post={post} open={commentsOpen} onOpenChange={setCommentsOpen} />
     </article>
   );
 }
