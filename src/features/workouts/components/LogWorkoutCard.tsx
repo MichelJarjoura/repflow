@@ -1,177 +1,209 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import * as Dialog from "@radix-ui/react-dialog";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Link } from "@tanstack/react-router";
-import { Check, ImagePlus, LoaderCircle, Play, Plus, Trash2, X } from "lucide-react";
-import {
-  optionalBackendFeaturesEnabled,
-  optionalBackendFeaturesMessage,
-} from "@/core/api/capabilities";
-import { ApiError } from "@/core/api/client";
-import { exerciseApi, mediaApi, postApi, userSessionApi } from "@/core/api/repflow";
-import { profileQueryKeys } from "@/features/profile/useProfile";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { Check, ChevronRight, Clock3, Dumbbell, LoaderCircle, Plus, Trash2, X } from "lucide-react";
+import { postApi } from "@/core/api/repflow";
+import { useAuth } from "@/core/auth/useAuth";
 
-type ExerciseEntry = { exerciseId: string; sets: string; reps: string; weight: string };
+type WorkoutSet = {
+  id: string;
+  exercise: string;
+  sets: string;
+  reps: string;
+  weight: string;
+};
 
-const newEntry = (): ExerciseEntry => ({ exerciseId: "", sets: "3", reps: "8", weight: "0" });
+type LocalWorkout = {
+  id: string;
+  title: string;
+  duration: number;
+  createdAt: string;
+  exercises: WorkoutSet[];
+};
+
+const newSet = (): WorkoutSet => ({
+  id: crypto.randomUUID(),
+  exercise: "",
+  sets: "3",
+  reps: "8",
+  weight: "",
+});
+
+function storageKey(userId: string | undefined) {
+  return `repflow_local_workouts_${userId ?? "guest"}`;
+}
+
+function getLocalWorkouts(userId: string | undefined): LocalWorkout[] {
+  try {
+    const value = localStorage.getItem(storageKey(userId));
+    return value ? (JSON.parse(value) as LocalWorkout[]) : [];
+  } catch {
+    return [];
+  }
+}
+
+function saveLocalWorkout(userId: string | undefined, workout: LocalWorkout) {
+  const stored = getLocalWorkouts(userId);
+  localStorage.setItem(storageKey(userId), JSON.stringify([workout, ...stored].slice(0, 30)));
+}
 
 export function LogWorkoutCard() {
+  const { user } = useAuth();
   const [open, setOpen] = useState(false);
-  const [description, setDescription] = useState("");
+  const [title, setTitle] = useState("Strength session");
   const [duration, setDuration] = useState("60");
-  const [entries, setEntries] = useState<ExerciseEntry[]>([newEntry()]);
-  const [postCaption, setPostCaption] = useState("");
-  const [files, setFiles] = useState<File[]>([]);
+  const [exercises, setExercises] = useState<WorkoutSet[]>([newSet()]);
+  const [shareToFeed, setShareToFeed] = useState(true);
   const [notice, setNotice] = useState<string | null>(null);
+  const [savedCount, setSavedCount] = useState(() => getLocalWorkouts(user?.id).length);
   const queryClient = useQueryClient();
-  const exercisesQuery = useQuery({
-    queryKey: ["exercises"],
-    queryFn: exerciseApi.getAll,
-    enabled: open && optionalBackendFeaturesEnabled,
-  });
-  const saveMutation = useMutation({
+
+  const estimatedVolume = useMemo(
+    () =>
+      exercises.reduce(
+        (total, exercise) =>
+          total +
+          Number(exercise.sets || 0) * Number(exercise.reps || 0) * Number(exercise.weight || 0),
+        0,
+      ),
+    [exercises],
+  );
+
+  const saveWorkout = useMutation({
     mutationFn: async () => {
-      const selected = entries.map((entry) => ({
-        exerciseId: entry.exerciseId,
-        sets: Number(entry.sets),
-        reps: Number(entry.reps),
-        weight: Number(entry.weight),
-      }));
+      const completedExercises = exercises.filter((exercise) => exercise.exercise.trim());
+      if (!completedExercises.length)
+        throw new Error("Add at least one exercise to save your workout.");
       if (
-        !selected.length ||
-        selected.some(
-          (entry) => !entry.exerciseId || entry.sets < 1 || entry.reps < 1 || entry.weight <= 0,
+        completedExercises.some(
+          (exercise) => Number(exercise.sets) < 1 || Number(exercise.reps) < 1,
         )
       ) {
-        throw new Error("Add at least one exercise with valid sets, reps, and weight.");
+        throw new Error("Each exercise needs at least one set and one rep.");
       }
-      const exerciseMap = new Map(
-        (exercisesQuery.data ?? []).map((exercise) => [exercise.id, exercise]),
-      );
-      const muscles = Array.from(
-        new Set(
-          selected.flatMap((entry) => {
-            const exercise = exerciseMap.get(entry.exerciseId);
-            return exercise ? [exercise.mainMuscle, ...exercise.secondaryMuscles] : [];
-          }),
-        ),
-      );
-      let session;
-      try {
-        session = await userSessionApi.create({
-          description: description.trim() || undefined,
-          muscles,
-          totalDurationMinutes: Number(duration),
-          exercises: selected,
-        });
-      } catch (error) {
-        if (error instanceof ApiError && error.status === 404) {
-          throw new Error(
-            "Workout logging is unavailable because the running backend does not expose the UserSessions endpoint. You can still share a standard progress post from the Feed.",
-          );
+
+      const workout: LocalWorkout = {
+        id: crypto.randomUUID(),
+        title: title.trim() || "Strength session",
+        duration: Math.max(1, Number(duration) || 60),
+        createdAt: new Date().toISOString(),
+        exercises: completedExercises,
+      };
+      saveLocalWorkout(user?.id, workout);
+
+      let published = false;
+      if (shareToFeed) {
+        const lines = completedExercises.map(
+          (exercise) =>
+            `• ${exercise.exercise}: ${exercise.sets} × ${exercise.reps}${exercise.weight ? ` @ ${exercise.weight} kg` : ""}`,
+        );
+        const summary = `${workout.title}\n${workout.duration} min · ${Math.round(estimatedVolume).toLocaleString()} kg volume\n\n${lines.join("\n")}`;
+        try {
+          await postApi.create({ content: summary });
+          published = true;
+        } catch {
+          // The workout remains safely stored in the browser if the active backend does not publish posts.
         }
-        throw error;
       }
-      let mediaUrls: string[] | undefined;
-      if (files.length) mediaUrls = (await mediaApi.uploadPostMedia(files)).urls;
-      if (postCaption.trim()) {
-        await postApi.createWithSession({
-          content: postCaption.trim(),
-          userSessionId: session.id,
-          mediaUrls,
-        });
-      }
-      return session;
+      return { workout, published };
     },
-    onSuccess: () => {
-      void queryClient.invalidateQueries({ queryKey: profileQueryKeys.sessions() });
+    onSuccess: ({ published }) => {
+      setSavedCount(getLocalWorkouts(user?.id).length);
+      setNotice(
+        published ? "Workout saved and shared to your feed." : "Workout saved on this device.",
+      );
+      setExercises([newSet()]);
+      setTitle("Strength session");
+      setDuration("60");
+      setOpen(false);
       void queryClient.invalidateQueries({ queryKey: ["feed"] });
-      setNotice("Workout saved to your training history.");
-      setEntries([newEntry()]);
-      setDescription("");
-      setPostCaption("");
-      setFiles([]);
     },
   });
 
-  const updateEntry = (index: number, patch: Partial<ExerciseEntry>) =>
-    setEntries((current) =>
-      current.map((entry, position) => (position === index ? { ...entry, ...patch } : entry)),
+  const updateExercise = (id: string, patch: Partial<WorkoutSet>) =>
+    setExercises((current) =>
+      current.map((exercise) => (exercise.id === id ? { ...exercise, ...patch } : exercise)),
     );
 
   return (
     <>
-      <div className="bg-card border border-brand/30 rounded-xl overflow-hidden shadow-[0_0_40px_-15px_rgba(223,255,0,0.1)]">
-        <div className="p-6 space-y-6">
-          <div>
-            <h2 className="font-display text-2xl tracking-tight mb-1">LOG WORKOUT</h2>
-            <p className="text-[10px] font-mono text-muted-foreground uppercase tracking-widest">
-              Record sessions, build records, and publish progress
-            </p>
+      <section className="overflow-hidden rounded-3xl border border-brand/25 bg-card shadow-[0_20px_60px_-35px_rgba(223,255,0,0.45)]">
+        <div className="bg-[radial-gradient(circle_at_90%_0%,rgba(223,255,0,0.18),transparent_42%)] p-6 sm:p-8">
+          <div className="flex flex-col justify-between gap-6 sm:flex-row sm:items-end">
+            <div className="max-w-lg">
+              <p className="text-xs font-mono uppercase tracking-[0.24em] text-brand">
+                Training log
+              </p>
+              <h2 className="mt-2 font-display text-4xl tracking-tighter">LOG YOUR WORKOUT</h2>
+              <p className="mt-3 text-sm leading-6 text-muted-foreground">
+                A quick, distraction-free place to capture your work. Your log is saved to this
+                device and can be shared as a feed post in one step.
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={() => {
+                setNotice(null);
+                setOpen(true);
+              }}
+              className="inline-flex items-center justify-center gap-2 rounded-2xl bg-brand px-6 py-3.5 font-bold text-brand-foreground transition-transform hover:opacity-90 active:scale-[0.97]"
+            >
+              Start logging <ChevronRight size={18} />
+            </button>
           </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <button
-              type="button"
-              onClick={() => setOpen(true)}
-              className="flex flex-col items-center justify-center gap-3 p-6 bg-brand/5 border border-brand/20 rounded-xl hover:bg-brand/10 transition-colors group"
-            >
-              <div className="size-12 rounded-full bg-brand/20 flex items-center justify-center text-brand group-hover:scale-110 transition-transform">
-                <Play fill="currentColor" size={24} />
-              </div>
-              <span className="font-display text-lg tracking-tight">EMPTY WORKOUT</span>
-            </button>
-            <button
-              type="button"
-              onClick={() => setOpen(true)}
-              className="flex flex-col items-center justify-center gap-3 p-6 bg-surface/40 border border-border rounded-xl hover:bg-surface/60 transition-colors group"
-            >
-              <div className="size-12 rounded-full bg-elevated flex items-center justify-center text-muted-foreground group-hover:scale-110 transition-transform">
-                <Plus size={24} />
-              </div>
-              <span className="font-display text-lg tracking-tight">BUILD SESSION</span>
-            </button>
+          <div className="mt-7 grid gap-3 sm:grid-cols-3">
+            <Metric icon={Dumbbell} label="Saved logs" value={String(savedCount)} />
+            <Metric icon={Clock3} label="Default time" value="60 min" />
+            <Metric icon={Check} label="Sharing" value="Optional" />
           </div>
           {notice && (
-            <p className="rounded-lg bg-brand/10 px-3 py-2 text-xs font-medium text-brand">
+            <p className="mt-5 rounded-2xl border border-brand/25 bg-brand/10 px-4 py-3 text-sm font-medium text-brand">
               {notice}
             </p>
           )}
         </div>
-      </div>
+      </section>
 
       <Dialog.Root open={open} onOpenChange={setOpen}>
         <Dialog.Portal>
-          <Dialog.Overlay className="fixed inset-0 z-[100] bg-background/80 backdrop-blur-sm" />
-          <Dialog.Content className="fixed inset-x-4 top-1/2 z-[101] mx-auto max-h-[90vh] w-auto max-w-3xl -translate-y-1/2 overflow-y-auto rounded-3xl border border-border bg-elevated p-6 shadow-2xl sm:p-8">
-            <div className="flex items-start justify-between gap-6">
+          <Dialog.Overlay className="fixed inset-0 z-[100] bg-background/85 backdrop-blur-sm" />
+          <Dialog.Content className="fixed inset-x-3 top-1/2 z-[101] mx-auto max-h-[92vh] w-auto max-w-3xl -translate-y-1/2 overflow-y-auto rounded-3xl border border-border bg-elevated p-5 shadow-2xl sm:p-8">
+            <div className="flex items-start justify-between gap-5">
               <div>
-                <Dialog.Title className="font-display text-3xl tracking-tight">
-                  BUILD WORKOUT
+                <p className="text-xs font-mono uppercase tracking-[0.22em] text-brand">
+                  Quick log
+                </p>
+                <Dialog.Title className="mt-1 font-display text-4xl tracking-tighter">
+                  What did you train?
                 </Dialog.Title>
                 <Dialog.Description className="mt-2 text-sm text-muted-foreground">
-                  Select exercises and save a real session to the backend.
+                  Add your exercises, then choose whether to share the completed session.
                 </Dialog.Description>
               </div>
-              <Dialog.Close className="rounded-full p-2 hover:bg-surface" aria-label="Close">
-                <X size={18} />
+              <Dialog.Close
+                aria-label="Close workout logger"
+                className="rounded-full p-2 text-muted-foreground hover:bg-surface hover:text-foreground"
+              >
+                <X size={20} />
               </Dialog.Close>
             </div>
+
             <form
-              className="mt-7 space-y-5"
               onSubmit={(event) => {
                 event.preventDefault();
                 setNotice(null);
-                saveMutation.mutate();
+                saveWorkout.mutate();
               }}
+              className="mt-7 space-y-6"
             >
-              <div className="grid gap-4 sm:grid-cols-[1fr_10rem]">
+              <div className="grid gap-4 sm:grid-cols-[1fr_9rem]">
                 <label className="space-y-2 text-xs font-mono uppercase tracking-widest text-muted-foreground">
-                  Session note
+                  Workout name
                   <input
-                    value={description}
-                    onChange={(event) => setDescription(event.target.value)}
-                    placeholder="e.g. Heavy push day"
+                    value={title}
+                    onChange={(event) => setTitle(event.target.value)}
                     className="auth-input mt-1 w-full"
+                    placeholder="e.g. Upper body"
                   />
                 </label>
                 <label className="space-y-2 text-xs font-mono uppercase tracking-widest text-muted-foreground">
@@ -185,149 +217,149 @@ export function LogWorkoutCard() {
                   />
                 </label>
               </div>
-              <div className="space-y-3">
-                <div className="flex items-center justify-between">
-                  <h3 className="font-display text-xl">EXERCISES</h3>
+
+              <div className="rounded-3xl border border-border bg-card/60 p-4 sm:p-5">
+                <div className="mb-4 flex items-center justify-between gap-3">
+                  <div>
+                    <h3 className="font-display text-2xl">Exercises</h3>
+                    <p className="mt-1 text-xs text-muted-foreground">
+                      Keep it simple: name, sets, reps, weight.
+                    </p>
+                  </div>
                   <button
                     type="button"
-                    onClick={() => setEntries((current) => [...current, newEntry()])}
-                    className="inline-flex items-center gap-1 text-xs font-bold text-brand hover:underline"
+                    onClick={() => setExercises((current) => [...current, newSet()])}
+                    className="inline-flex items-center gap-1 rounded-xl border border-brand/30 px-3 py-2 text-xs font-bold text-brand hover:bg-brand/10"
                   >
-                    <Plus size={14} /> Add exercise
+                    <Plus size={15} /> Add
                   </button>
                 </div>
-                {exercisesQuery.isLoading && (
-                  <p className="text-sm text-muted-foreground">Loading exercises…</p>
-                )}
-                {!optionalBackendFeaturesEnabled && (
-                  <p className="rounded-xl border border-amber-400/30 bg-amber-400/10 p-3 text-sm text-amber-200">
-                    {optionalBackendFeaturesMessage}
-                  </p>
-                )}
-                {exercisesQuery.error && (
-                  <p className="rounded-xl border border-destructive/30 bg-destructive/10 p-3 text-sm text-destructive">
-                    The running backend did not provide the exercise catalog needed for workout
-                    logging. Use the Feed composer to share an update until that endpoint is
-                    deployed.
-                  </p>
-                )}
-                {entries.map((entry, index) => (
-                  <div
-                    key={index}
-                    className="grid gap-2 rounded-2xl border border-border bg-card p-3 sm:grid-cols-[1fr_5rem_5rem_6rem_auto]"
-                  >
-                    <select
-                      value={entry.exerciseId}
-                      onChange={(event) => updateEntry(index, { exerciseId: event.target.value })}
-                      className="auth-input"
+                <div className="space-y-3">
+                  {exercises.map((exercise, index) => (
+                    <div
+                      key={exercise.id}
+                      className="grid gap-2 rounded-2xl border border-border bg-surface/30 p-3 sm:grid-cols-[1fr_4.5rem_4.5rem_5.5rem_auto]"
                     >
-                      <option value="">Choose exercise</option>
-                      {(exercisesQuery.data ?? []).map((exercise) => (
-                        <option key={exercise.id} value={exercise.id}>
-                          {exercise.name}
-                        </option>
-                      ))}
-                    </select>
-                    <input
-                      aria-label="Sets"
-                      type="number"
-                      min="1"
-                      value={entry.sets}
-                      onChange={(event) => updateEntry(index, { sets: event.target.value })}
-                      className="auth-input"
-                      placeholder="Sets"
-                    />
-                    <input
-                      aria-label="Reps"
-                      type="number"
-                      min="1"
-                      value={entry.reps}
-                      onChange={(event) => updateEntry(index, { reps: event.target.value })}
-                      className="auth-input"
-                      placeholder="Reps"
-                    />
-                    <input
-                      aria-label="Weight in kilograms"
-                      type="number"
-                      min="0.1"
-                      step="0.5"
-                      value={entry.weight}
-                      onChange={(event) => updateEntry(index, { weight: event.target.value })}
-                      className="auth-input"
-                      placeholder="KG"
-                    />
-                    <button
-                      type="button"
-                      disabled={entries.length === 1}
-                      onClick={() =>
-                        setEntries((current) => current.filter((_, position) => position !== index))
-                      }
-                      className="grid place-items-center rounded-xl px-3 text-muted-foreground hover:bg-destructive/10 hover:text-destructive disabled:opacity-30"
-                    >
-                      <Trash2 size={17} />
-                    </button>
-                  </div>
-                ))}
-              </div>
-              <div className="grid gap-4 rounded-2xl border border-border bg-card p-4 sm:grid-cols-[1fr_auto]">
-                <label className="space-y-2 text-xs font-mono uppercase tracking-widest text-muted-foreground">
-                  Share caption{" "}
-                  <textarea
-                    value={postCaption}
-                    onChange={(event) => setPostCaption(event.target.value)}
-                    placeholder="Optional: publish this session to your feed"
-                    className="auth-input mt-1 min-h-20 w-full resize-none"
-                  />
-                </label>
-                <label className="flex cursor-pointer items-center justify-center gap-2 rounded-xl border border-dashed border-border px-4 text-sm text-muted-foreground hover:text-brand">
-                  <ImagePlus size={18} /> Media
-                  <input
-                    type="file"
-                    multiple
-                    accept="image/*,video/*"
-                    className="hidden"
-                    onChange={(event) => setFiles(Array.from(event.target.files ?? []))}
-                  />
-                </label>
-              </div>
-              {files.length > 0 && (
-                <p className="text-xs text-muted-foreground">
-                  {files.length} media file{files.length === 1 ? "" : "s"} ready to upload.
-                </p>
-              )}
-              {saveMutation.error && (
-                <div className="rounded-xl border border-destructive/30 bg-destructive/10 p-3 text-sm text-destructive">
-                  <p>{saveMutation.error.message}</p>
-                  <Link
-                    to="/feed"
-                    onClick={() => setOpen(false)}
-                    className="mt-2 inline-block text-xs font-bold text-brand hover:underline"
-                  >
-                    Open Feed composer →
-                  </Link>
+                      <input
+                        value={exercise.exercise}
+                        onChange={(event) =>
+                          updateExercise(exercise.id, { exercise: event.target.value })
+                        }
+                        placeholder={index === 0 ? "e.g. Barbell squat" : "Exercise name"}
+                        className="auth-input"
+                      />
+                      <input
+                        aria-label="Sets"
+                        type="number"
+                        min="1"
+                        value={exercise.sets}
+                        onChange={(event) =>
+                          updateExercise(exercise.id, { sets: event.target.value })
+                        }
+                        placeholder="Sets"
+                        className="auth-input"
+                      />
+                      <input
+                        aria-label="Reps"
+                        type="number"
+                        min="1"
+                        value={exercise.reps}
+                        onChange={(event) =>
+                          updateExercise(exercise.id, { reps: event.target.value })
+                        }
+                        placeholder="Reps"
+                        className="auth-input"
+                      />
+                      <input
+                        aria-label="Weight in kilograms"
+                        type="number"
+                        min="0"
+                        step="0.5"
+                        value={exercise.weight}
+                        onChange={(event) =>
+                          updateExercise(exercise.id, { weight: event.target.value })
+                        }
+                        placeholder="KG"
+                        className="auth-input"
+                      />
+                      <button
+                        type="button"
+                        disabled={exercises.length === 1}
+                        onClick={() =>
+                          setExercises((current) =>
+                            current.filter((item) => item.id !== exercise.id),
+                          )
+                        }
+                        className="grid place-items-center rounded-xl px-3 text-muted-foreground hover:bg-destructive/10 hover:text-destructive disabled:opacity-30"
+                        aria-label="Remove exercise"
+                      >
+                        <Trash2 size={17} />
+                      </button>
+                    </div>
+                  ))}
                 </div>
+              </div>
+
+              <div className="flex flex-col gap-4 rounded-3xl border border-border bg-surface/25 p-4 sm:flex-row sm:items-center sm:justify-between">
+                <label className="flex cursor-pointer items-center gap-3">
+                  <input
+                    type="checkbox"
+                    checked={shareToFeed}
+                    onChange={(event) => setShareToFeed(event.target.checked)}
+                    className="size-4 accent-[var(--color-brand)]"
+                  />
+                  <span>
+                    <strong className="block text-sm">Share to your feed</strong>
+                    <span className="text-xs text-muted-foreground">
+                      Creates a simple progress post after this log is saved.
+                    </span>
+                  </span>
+                </label>
+                <p className="text-sm font-mono text-brand">
+                  {Math.round(estimatedVolume).toLocaleString()} KG volume
+                </p>
+              </div>
+              {saveWorkout.error && (
+                <p className="rounded-2xl border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm text-destructive">
+                  {saveWorkout.error.message}
+                </p>
               )}
               <button
                 type="submit"
-                disabled={
-                  saveMutation.isPending ||
-                  exercisesQuery.isLoading ||
-                  Boolean(exercisesQuery.error) ||
-                  !optionalBackendFeaturesEnabled
-                }
-                className="inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-brand px-5 py-3.5 font-bold text-brand-foreground disabled:opacity-60"
+                disabled={saveWorkout.isPending}
+                className="inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-brand px-5 py-4 font-bold text-brand-foreground transition-transform hover:opacity-90 active:scale-[0.98] disabled:opacity-50"
               >
-                {saveMutation.isPending ? (
-                  <LoaderCircle className="animate-spin" size={18} />
+                {saveWorkout.isPending ? (
+                  <LoaderCircle className="animate-spin" size={19} />
                 ) : (
-                  <Check size={18} />
+                  <Check size={19} />
                 )}{" "}
-                Save workout
+                Save workout{shareToFeed ? " & share" : ""}
               </button>
             </form>
           </Dialog.Content>
         </Dialog.Portal>
       </Dialog.Root>
     </>
+  );
+}
+
+function Metric({
+  icon: Icon,
+  label,
+  value,
+}: {
+  icon: typeof Dumbbell;
+  label: string;
+  value: string;
+}) {
+  return (
+    <div className="rounded-2xl border border-border/70 bg-background/40 p-4">
+      <Icon size={17} className="text-brand" />
+      <p className="mt-3 text-xs font-mono uppercase tracking-widest text-muted-foreground">
+        {label}
+      </p>
+      <p className="mt-1 font-display text-2xl tracking-tight">{value}</p>
+    </div>
   );
 }

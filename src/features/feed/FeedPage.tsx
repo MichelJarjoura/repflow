@@ -1,6 +1,14 @@
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Heart, LoaderCircle, MessageCircle, PlusCircle, RefreshCw, Send } from "lucide-react";
+import {
+  Heart,
+  LoaderCircle,
+  MessageCircle,
+  PlusCircle,
+  RefreshCw,
+  Send,
+  Trash2,
+} from "lucide-react";
 import { IdentityCard } from "./components/IdentityCard";
 import { RightRail } from "./components/RightRail";
 import { FeedFilter } from "./components/FeedFilter";
@@ -113,6 +121,12 @@ function BackendFeedPost({
       void queryClient.invalidateQueries({ queryKey: ["feed"] });
     },
   });
+  const deletePost = useMutation({
+    mutationFn: () => postApi.remove(post.id),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ["feed"] });
+    },
+  });
   return (
     <article className="rounded-3xl border border-border bg-card p-6">
       <div className="flex items-center gap-3">
@@ -123,12 +137,30 @@ function BackendFeedPost({
             authorName.slice(0, 1).toUpperCase()
           )}
         </div>
-        <div>
+        <div className="min-w-0 flex-1">
           <p className="font-bold text-foreground">{authorName}</p>
           <p className="text-xs text-muted-foreground">
             {authorHandle} · {relativeTime(post.createdAt)}
           </p>
         </div>
+        {isViewer && (
+          <button
+            type="button"
+            onClick={() => {
+              if (window.confirm("Delete this post? This action cannot be undone."))
+                deletePost.mutate();
+            }}
+            disabled={deletePost.isPending}
+            aria-label="Delete your post"
+            className="rounded-full p-2 text-muted-foreground transition-colors hover:bg-destructive/10 hover:text-destructive disabled:opacity-50"
+          >
+            {deletePost.isPending ? (
+              <LoaderCircle size={17} className="animate-spin" />
+            ) : (
+              <Trash2 size={17} />
+            )}
+          </button>
+        )}
       </div>
       <p className="mt-5 whitespace-pre-wrap text-sm leading-7 text-foreground/90">
         {post.content}
@@ -163,6 +195,11 @@ function BackendFeedPost({
           <MessageCircle size={18} /> {post.commentsCount}
         </button>
       </div>
+      {deletePost.error && (
+        <p className="mt-4 rounded-xl border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive">
+          {deletePost.error.message}
+        </p>
+      )}
       {commentsOpen && (
         <div className="mt-5 border-t border-border pt-4">
           <div className="space-y-3">
