@@ -82,14 +82,13 @@ export const Route = createRootRouteWithContext<MyRouterContext>()({
       {
         name: "description",
         content:
-          "The social platform for lifters. Log workouts, track PRs, share runs — build your fitness identity through progress.",
+          "The social platform for lifters. Log workouts, track PRs, and share progress with your community.",
       },
       { name: "author", content: "REPFLOW" },
       { property: "og:title", content: "REPFLOW — Every workout is social content" },
       {
         property: "og:description",
-        content:
-          "Log workouts, track PRs, share runs. Build your fitness identity through progress.",
+        content: "Log workouts, track PRs, and share progress with your community.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },

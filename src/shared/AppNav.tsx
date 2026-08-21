@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Link, useRouterState } from "@tanstack/react-router";
+import { Link, useNavigate, useRouterState } from "@tanstack/react-router";
 import {
   Home,
   Dumbbell,
@@ -15,7 +15,6 @@ import {
   LayoutDashboard,
 } from "lucide-react";
 import avatar from "@/assets/avatar-1.jpg";
-import { LogWorkoutModal } from "./LogWorkoutModal";
 import { useAuth } from "@/core/auth/useAuth";
 import { AuthModal } from "@/core/auth/components/AuthModal";
 import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
@@ -30,7 +29,7 @@ const links = [
 
 export function AppNav() {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
-  const [isLogModalOpen, setIsLogModalOpen] = useState(false);
+  const navigate = useNavigate();
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const { user, isAuthenticated, logout } = useAuth();
 
@@ -46,7 +45,7 @@ export function AppNav() {
     if (!isAuthenticated) {
       setIsAuthModalOpen(true);
     } else {
-      setIsLogModalOpen(true);
+      void navigate({ to: "/workouts" });
     }
   };
 
@@ -196,7 +195,6 @@ export function AppNav() {
         </button>
       </nav>
 
-      <LogWorkoutModal open={isLogModalOpen} onOpenChange={setIsLogModalOpen} />
       <AuthModal open={isAuthModalOpen} onOpenChange={setIsAuthModalOpen} />
     </>
   );
