@@ -72,14 +72,14 @@ The codebase is migrated in behavior-preserving vertical slices. A complete rewr
 
 The migration has been completed as a vertical-slice refactor rather than a behavior-changing rewrite. Existing API routes, JWT behavior, React Query keys, local workout data, and user-facing flows remain intact; only ownership of those concerns has moved to the correct layer.
 
-| Area | Domain | Application | Infrastructure | Presentation result |
-|---|---|---|---|---|
-| Authentication | `domain/athlete/authenticatedUser.ts` | Global session composition in `app/auth/`. | `infrastructure/repositories/authRepository.ts`. | Auth modal, navigation, and route guards consume the app auth context. |
-| Feed and comments | `domain/social/social.ts`. | `features/feed/application/useFeed.ts` and `postActions.ts`. | `socialRepository.ts`. | Feed, composer, comment dialog, deletion, and author resolution do not import transport modules. |
-| Communities | `domain/community/community.ts`. | `features/communities/application/`. | `communityRepository.ts`. | Community discovery, posts, challenges, and moderation use application hooks. |
-| Profiles and follows | `domain/athlete/athlete.ts`. | `features/profile/application/`. | `athleteRepository.ts` and `trainingRepository.ts`. | Profile pages, athlete profiles, and follow controls use profile application actions. |
-| Workouts | `domain/workout/`. | `features/workouts/application/`. | `localWorkoutStore.ts`. | Logger, history deletion, calendar, and statistics use the workout application hook. |
-| Explore | Athlete and social domain contracts. | `features/explore/application/useExploreAthletes.ts`. | Athlete repository. | Search, publisher identity, and profile navigation do not reach into HTTP code. |
+| Area                 | Domain                                | Application                                                  | Infrastructure                                      | Presentation result                                                                              |
+| -------------------- | ------------------------------------- | ------------------------------------------------------------ | --------------------------------------------------- | ------------------------------------------------------------------------------------------------ |
+| Authentication       | `domain/athlete/authenticatedUser.ts` | Global session composition in `app/auth/`.                   | `infrastructure/repositories/authRepository.ts`.    | Auth modal, navigation, and route guards consume the app auth context.                           |
+| Feed and comments    | `domain/social/social.ts`.            | `features/feed/application/useFeed.ts` and `postActions.ts`. | `socialRepository.ts`.                              | Feed, composer, comment dialog, deletion, and author resolution do not import transport modules. |
+| Communities          | `domain/community/community.ts`.      | `features/communities/application/`.                         | `communityRepository.ts`.                           | Community discovery, posts, challenges, and moderation use application hooks.                    |
+| Profiles and follows | `domain/athlete/athlete.ts`.          | `features/profile/application/`.                             | `athleteRepository.ts` and `trainingRepository.ts`. | Profile pages, athlete profiles, and follow controls use profile application actions.            |
+| Workouts             | `domain/workout/`.                    | `features/workouts/application/`.                            | `localWorkoutStore.ts`.                             | Logger, history deletion, calendar, and statistics use the workout application hook.             |
+| Explore              | Athlete and social domain contracts.  | `features/explore/application/useExploreAthletes.ts`.        | Athlete repository.                                 | Search, publisher identity, and profile navigation do not reach into HTTP code.                  |
 
 ## Verified dependency checks
 

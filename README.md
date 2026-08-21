@@ -1,63 +1,177 @@
 # REPFLOW
 
-REPFLOW is a fitness social experience for logging progress, sharing training, and organizing around communities. The current frontend includes a community hub, collective challenges, community posts, and API-backed authentication flows.
+> **A social fitness platform for athletes who want to log meaningful training, share progress, discover training partners, and build momentum together.**
 
-## Run locally
+[![TypeScript](https://img.shields.io/badge/TypeScript-5.8-3178C6?logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
+[![React](https://img.shields.io/badge/React-19-61DAFB?logo=react&logoColor=111827)](https://react.dev/)
+[![Vite](https://img.shields.io/badge/Vite-7-646CFF?logo=vite&logoColor=white)](https://vite.dev/)
+[![License](https://img.shields.io/badge/License-MIT-16A34A)](LICENSE)
 
-```bash
-npm ci
-cp .env.example .env.local
-npm run dev
+REPFLOW is a full-stack social fitness experience built around a simple idea: training progress is more motivating when it is visible, measurable, and shared with the right people. Athletes can log workouts, publish progress posts, join communities, take part in collective challenges, discover other members, and follow the people who inspire them.
+
+The repository contains the **React frontend**. It is designed to work with the companion ASP.NET Core and MongoDB backend while keeping the frontend independently maintainable through a Clean Architecture approach.
+
+## Contents
+
+| Section                                       | Description                                                    |
+| --------------------------------------------- | -------------------------------------------------------------- |
+| [Product capabilities](#product-capabilities) | What athletes can do in REPFLOW today.                         |
+| [Technology](#technology)                     | Frontend stack and engineering tools.                          |
+| [Architecture](#architecture)                 | Clean Architecture layers and dependency rules.                |
+| [Getting started](#getting-started)           | Local setup, environment variables, and scripts.               |
+| [Backend integration](#backend-integration)   | API assumptions and local development connection.              |
+| [Repository standards](#repository-standards) | Quality checks, contribution workflow, and security reporting. |
+
+## Product capabilities
+
+REPFLOW combines a social feed with practical training workflows. The product intentionally keeps challenges inside communities rather than isolating them in a separate destination.
+
+| Area           | Current capability                                                                                                                                                   |
+| -------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Authentication | JWT-backed registration, sign in, sign out, verification, password-reset flows, and session restoration.                                                             |
+| Feed           | Global post discovery, media publishing, likes, focused comment conversations, real author identities, and author-owned post deletion.                               |
+| Workouts       | A local-first quick logger with visible field labels, optional feed sharing, history deletion, derived personal records, volume, streak, and consistency statistics. |
+| Communities    | Community discovery, creation, membership, community feeds, collective challenges, contribution tracking, and creator-only moderation controls.                      |
+| Explore        | Exact username discovery, athlete profile navigation, follow state, real publisher identities, and readable post previews.                                           |
+| Profiles       | Authenticated profile data, published posts, athlete statistics, local training summaries, and public athlete profile views.                                         |
+
+> **Local-first workouts:** the active backend may not expose session and exercise routes in every environment. Workout logs therefore remain useful immediately by persisting per-user in the browser, while all derived statistics update instantly.
+
+## Technology
+
+The frontend is implemented as a TypeScript-first web application with an API-backed social domain and an explicit separation between product features and infrastructure.
+
+| Concern                     | Technology                                                   |
+| --------------------------- | ------------------------------------------------------------ |
+| UI                          | React 19, TypeScript, Tailwind CSS 4, Radix UI, Lucide icons |
+| Routing and server state    | TanStack Router, TanStack Start, TanStack Query              |
+| Build and local development | Vite 7, Node.js 22                                           |
+| API integration             | Fetch-based JSON client with bearer-token authentication     |
+| Code quality                | ESLint, Prettier, TypeScript, GitHub Actions                 |
+| Backend companion           | ASP.NET Core, MongoDB, JWT authentication                    |
+
+## Architecture
+
+The frontend follows a practical Clean Architecture model. The goal is to keep business rules and UI behavior stable while allowing the backend, browser persistence, or presentation layer to evolve independently.
+
+```text
+src/
+├── app/                 # Composition: auth provider, configuration, runtime, styles
+├── domain/              # Framework-independent business entities and calculations
+├── application/         # Repository ports and application-wide contracts
+├── infrastructure/      # HTTP client, repositories, DTO mapping, local persistence
+├── features/            # Feature application hooks and presentation components
+└── shared/              # Reusable layout and UI primitives
 ```
 
-Set `VITE_API_BASE_URL` to the backend origin or API root. Both values below are valid:
+> **Dependency rule:** presentation components call feature application hooks and actions. Application code coordinates use cases. Infrastructure owns endpoint paths, browser storage, and API data-transfer shapes. Domain code imports no React, HTTP, storage, or UI libraries.
+
+For a detailed migration map and maintenance rules, see [the Clean Architecture guide](docs/clean-architecture.md).
+
+## Getting started
+
+### Prerequisites
+
+| Requirement | Recommended version                                                                 |
+| ----------- | ----------------------------------------------------------------------------------- |
+| Node.js     | 22 LTS or newer                                                                     |
+| npm         | 10 or newer                                                                         |
+| Backend API | Optional for UI work; required for account, social, community, and follow workflows |
+
+### Install and run
+
+```bash
+# Clone the repository
+ git clone https://github.com/MichelJarjoura/repflow.git
+ cd repflow
+
+# Install exact dependencies
+ npm ci
+
+# Configure the local API target
+ cp .env.example .env.local
+
+# Start the development server
+ npm run dev
+```
+
+The frontend is served on `http://localhost:8080` by default. When working against the companion backend locally, run it separately on `http://localhost:5024`.
+
+### Environment configuration
+
+Copy `.env.example` into `.env.local` and select the API strategy that matches your environment.
+
+| Variable                                | Purpose                                                                       | Example                                                    |
+| --------------------------------------- | ----------------------------------------------------------------------------- | ---------------------------------------------------------- |
+| `VITE_API_PROXY_TARGET`                 | Vite development proxy target.                                                | `http://localhost:5024`                                    |
+| `VITE_API_BASE_URL`                     | Explicit backend origin or API root; use when not relying on the local proxy. | `https://api.example.com` or `https://api.example.com/api` |
+| `VITE_ENABLE_OPTIONAL_BACKEND_FEATURES` | Enables routes that are not exposed in all backend environments.              | `false`                                                    |
 
 ```dotenv
-VITE_API_BASE_URL=https://api.example.com
-# or
-VITE_API_BASE_URL=https://api.example.com/api
+# .env.local
+VITE_API_PROXY_TARGET=http://localhost:5024
+VITE_ENABLE_OPTIONAL_BACKEND_FEATURES=false
 ```
 
-The frontend will call `/api/Auth/*` when the value is an origin and will not duplicate `/api` when it is already included.
+## Backend integration
 
-## Authentication integration
+REPFLOW uses header-based JWT authentication. After a successful sign in, the frontend stores the returned access token in `sessionStorage` and sends it as a bearer token on protected requests.
 
-The authentication client lives in `src/core/api/auth.ts`. It uses a bearer token returned by the JSON login/register response and sends that token in the `Authorization` header for protected requests. A returned token is stored only in `sessionStorage`, not persistent browser storage.
+| Workflow        | Primary endpoint          |
+| --------------- | ------------------------- |
+| Register        | `POST /api/Auth/register` |
+| Sign in         | `POST /api/Auth/login`    |
+| Sign out        | `POST /api/Auth/logout`   |
+| Current athlete | `GET /api/Users/{id}`     |
+| Global feed     | `GET /api/Posts`          |
+| Create post     | `POST /api/Posts`         |
+| Communities     | `/api/Community/*`        |
+| Challenges      | `/api/Challenge/*`        |
+| Follows         | `/api/Follows/*`          |
 
-| Backend endpoint                 | Frontend flow                                   | Request body expected by the frontend                     |
-| -------------------------------- | ----------------------------------------------- | --------------------------------------------------------- |
-| `POST /api/Auth/register`        | Create account                                  | `{ name, fullName, username, userName, email, password }` |
-| `GET /api/Auth/me`               | Restore/verify session                          | No body                                                   |
-| `POST /api/Auth/login`           | Sign in                                         | `{ email, password }`                                     |
-| `POST /api/Auth/verify-email`    | Verify email                                    | `{ email, token }`                                        |
-| `POST /api/Auth/forgot-password` | Request password reset                          | `{ email }`                                               |
-| `POST /api/Auth/reset-password`  | Set a new password                              | `{ email, token, password, newPassword }`                 |
-| `GET /api/Auth/test-protected`   | Available in the API client for session testing | No body                                                   |
-| `POST /api/Auth/logout`          | End session                                     | No body                                                   |
+The frontend accommodates known backend route gaps by gating optional experiences and retaining local workout functionality. Backend behavior and frontend compatibility decisions are documented in [backend-readonly-findings.md](docs/backend-readonly-findings.md).
 
-The client accepts these common response shapes:
+## Repository standards
 
-```json
-{ "token": "...", "user": { "id": "...", "name": "...", "username": "..." } }
-```
-
-```json
-{ "accessToken": "...", "data": { "id": "...", "fullName": "...", "userName": "..." } }
-```
-
-The backend is configured for header-based JWT authentication. For cross-origin deployment, add the exact frontend origin to `Cors:AllowedOrigins` and allow the `Authorization` request header.
-
-> The exact server response DTO was not provided. The client normalizes common `user`, `data`, `token`, and `accessToken` response fields. If the backend uses a different schema, adjust only the normalization functions in `src/core/api/auth.ts`.
-
-## Communities
-
-The **Communities** tab replaces a standalone challenges destination. It supports discovery, creation, membership, community feeds, group challenges, joining challenges, and adding challenge contributions. Community data is intentionally persisted in browser storage while community API endpoints are not yet specified. Authentication, however, is no longer mocked and is driven by the backend API above.
-
-Community state is now accessed through React Query in `src/features/communities/communityQueries.ts`. When community endpoints are ready, replace only that temporary browser-storage adapter with API calls; the existing query keys and mutations will keep the page API unchanged. The UI data model already separates communities, posts, challenges, memberships, and contributions.
-
-## Quality checks
+Every production change should pass formatting, linting, and a production build before review.
 
 ```bash
+# Format source files
+npm run format
+
+# Run lint rules
 npm run lint
+
+# Produce a production build
 npm run build
+
+# Run the full local verification sequence
+npm run check
 ```
+
+| Document                                         | Purpose                                                                               |
+| ------------------------------------------------ | ------------------------------------------------------------------------------------- |
+| [CONTRIBUTING.md](CONTRIBUTING.md)               | Local workflow, branch convention, pull-request expectations, and architecture rules. |
+| [SECURITY.md](SECURITY.md)                       | Responsible process for reporting security issues.                                    |
+| [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md)         | Community expectations for contributors and participants.                             |
+| [GitHub issue templates](.github/ISSUE_TEMPLATE) | Structured bug and feature reporting.                                                 |
+
+## Roadmap
+
+The project is actively evolving. Near-term work is focused on reliable backend workout synchronization, broader athlete discovery once a directory endpoint exists, richer community moderation, and automated end-to-end test coverage.
+
+## Contributing
+
+Contributions and feedback are welcome. Please begin with [CONTRIBUTING.md](CONTRIBUTING.md), keep changes focused, and follow the architectural dependency rules described above.
+
+## Security
+
+Please do **not** report vulnerabilities through public issues. Follow the private reporting process in [SECURITY.md](SECURITY.md).
+
+## License
+
+This project is licensed under the [MIT License](LICENSE).
+
+---
+
+Built with a focus on consistent training, meaningful social accountability, and maintainable engineering.

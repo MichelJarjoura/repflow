@@ -1,0 +1,6 @@
+# Default ownership for the REPFLOW frontend repository.
+* @MichelJarjoura
+
+# Architecture and project documentation.
+/docs/ @MichelJarjoura
+/.github/ @MichelJarjoura

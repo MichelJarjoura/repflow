@@ -1,15 +1,41 @@
 {
-  "name": "tanstack_start_ts",
+  "name": "repflow",
+  "version": "0.1.0",
+  "description": "A social fitness platform for logging training, sharing progress, and building communities.",
   "private": true,
   "sideEffects": false,
   "type": "module",
+  "license": "MIT",
+  "author": "Michel Jarjoura",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/MichelJarjoura/repflow.git"
+  },
+  "bugs": {
+    "url": "https://github.com/MichelJarjoura/repflow/issues"
+  },
+  "homepage": "https://github.com/MichelJarjoura/repflow#readme",
+  "keywords": [
+    "fitness",
+    "social-fitness",
+    "workout-tracking",
+    "react",
+    "typescript",
+    "tanstack"
+  ],
+  "engines": {
+    "node": ">=22.0.0",
+    "npm": ">=10.0.0"
+  },
   "scripts": {
     "dev": "vite dev",
     "build": "vite build",
     "build:dev": "vite build --mode development",
     "preview": "vite preview",
     "lint": "eslint .",
-    "format": "prettier --write ."
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "check": "npm run format:check && npm run lint && npm run build"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.2.2",
