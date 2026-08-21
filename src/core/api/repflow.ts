@@ -117,6 +117,12 @@ export const communityApi = {
     apiRequest<BackendCommunity>("Community", { method: "POST", body: input }),
   join: (id: string) => apiRequest<unknown>(`Community/${id}/join`, { method: "POST" }),
   leave: (id: string) => apiRequest<unknown>(`Community/${id}/leave`, { method: "DELETE" }),
+  makeAdmin: (communityId: string, userId: string) =>
+    apiRequest<unknown>(`Community/${communityId}/make-admin/${userId}`, { method: "PATCH" }),
+  removeAdmin: (communityId: string, userId: string) =>
+    apiRequest<unknown>(`Community/${communityId}/remove-admin/${userId}`, { method: "PATCH" }),
+  removeMember: (communityId: string, userId: string) =>
+    apiRequest<unknown>(`Community/${communityId}/remove-member/${userId}`, { method: "DELETE" }),
   getMembers: (id: string) =>
     apiRequest<Array<{ userId: string; userName: string; isAdmin: boolean }>>(
       `Community/${id}/members`,

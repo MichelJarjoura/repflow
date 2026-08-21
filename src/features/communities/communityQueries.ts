@@ -20,6 +20,10 @@ export type CommunityRecord = {
   initials: string;
   joined: boolean;
   isPrivate: boolean;
+  ownerId: string;
+  isOwner: boolean;
+  isAdmin: boolean;
+  adminIds: string[];
 };
 
 export type CommunityPostRecord = {
@@ -82,6 +86,10 @@ function mapCommunity(community: BackendCommunity): CommunityRecord {
     initials: initials(community.name),
     joined: community.isMember,
     isPrivate: community.isPrivate,
+    ownerId: community.ownerId,
+    isOwner: community.isOwner,
+    isAdmin: community.isAdmin,
+    adminIds: community.adminIds ?? [],
   };
 }
 
@@ -141,6 +149,11 @@ export function useCommunityData(selectedCommunityId: string | null, enabled: bo
     queryFn: challengeApi.getMine,
     enabled,
   });
+  const membersQuery = useQuery({
+    queryKey: [...communityQueryKeys.all, "members", selectedCommunityId ?? "none"],
+    queryFn: () => communityApi.getMembers(selectedCommunityId!),
+    enabled: enabled && Boolean(selectedCommunityId),
+  });
 
   const joinedChallengeIds = new Set(
     (joinedChallengesQuery.data ?? []).map((challenge) => challenge.id).filter(Boolean),
@@ -157,7 +170,11 @@ export function useCommunityData(selectedCommunityId: string | null, enabled: bo
     void queryClient.invalidateQueries({
       queryKey: communityQueryKeys.challenges(selectedCommunityId),
     });
+    void queryClient.invalidateQueries({
+      queryKey: [...communityQueryKeys.all, "members", selectedCommunityId],
+    });
     void queryClient.invalidateQueries({ queryKey: communityQueryKeys.joinedChallenges() });
+    invalidateMine();
   };
 
   const createCommunityMutation = useMutation({
@@ -177,22 +194,53 @@ export function useCommunityData(selectedCommunityId: string | null, enabled: bo
       challengeApi.updateParticipation(challengeId, amount),
     onSuccess: invalidateSelected,
   });
+  const leaveCommunityMutation = useMutation({
+    mutationFn: communityApi.leave,
+    onSettled: invalidateMine,
+  });
+  const makeAdminMutation = useMutation({
+    mutationFn: ({ communityId, userId }: { communityId: string; userId: string }) =>
+      communityApi.makeAdmin(communityId, userId),
+    onSuccess: invalidateSelected,
+  });
+  const removeAdminMutation = useMutation({
+    mutationFn: ({ communityId, userId }: { communityId: string; userId: string }) =>
+      communityApi.removeAdmin(communityId, userId),
+    onSuccess: invalidateSelected,
+  });
+  const removeMemberMutation = useMutation({
+    mutationFn: ({ communityId, userId }: { communityId: string; userId: string }) =>
+      communityApi.removeMember(communityId, userId),
+    onSuccess: invalidateSelected,
+  });
   const publishPostMutation = useMutation({
     mutationFn: ({ communityId, content }: { communityId: string; content: string }) =>
       postApi.create({ content, communityId }),
-    onSuccess: invalidateSelected,
+    onSuccess: (post) => {
+      if (!selectedCommunityId) return;
+      queryClient.setQueryData<BackendPost[]>(
+        communityQueryKeys.posts(selectedCommunityId),
+        (current = []) => [post, ...current.filter((item) => item.id !== post.id)],
+      );
+      invalidateSelected();
+    },
   });
 
   return {
     communities: communitiesQuery.data ?? [],
     posts: (postsQuery.data ?? []).map(mapPost),
     challenges,
+    members: membersQuery.data ?? [],
     isLoading: communitiesQuery.isLoading || postsQuery.isLoading || challengesQuery.isLoading,
     error: communitiesQuery.error ?? postsQuery.error ?? challengesQuery.error,
     createCommunity: createCommunityMutation.mutateAsync,
     joinCommunity: joinCommunityMutation.mutateAsync,
     joinChallenge: joinChallengeMutation.mutateAsync,
     updateParticipation: updateParticipationMutation.mutateAsync,
+    leaveCommunity: leaveCommunityMutation.mutateAsync,
+    makeAdmin: makeAdminMutation.mutateAsync,
+    removeAdmin: removeAdminMutation.mutateAsync,
+    removeMember: removeMemberMutation.mutateAsync,
     publishPost: publishPostMutation.mutateAsync,
   };
 }

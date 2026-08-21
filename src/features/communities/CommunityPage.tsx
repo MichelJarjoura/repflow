@@ -9,14 +9,19 @@ import {
   Plus,
   Search,
   Send,
+  Shield,
   Sparkles,
   Target,
+  Trash2,
+  UserMinus,
+  UserPlus,
   Users,
   X,
 } from "lucide-react";
 import { useAuth } from "@/core/auth/useAuth";
 import { AuthModal } from "@/core/auth/components/AuthModal";
 import { useCommunityData } from "./communityQueries";
+import { ApiError } from "@/core/api/client";
 
 type CommunityTone = "brand" | "violet" | "amber";
 
@@ -29,6 +34,10 @@ type Community = {
   tone: CommunityTone;
   initials: string;
   joined?: boolean;
+  ownerId: string;
+  isOwner: boolean;
+  isAdmin: boolean;
+  adminIds: string[];
 };
 
 type Challenge = {
@@ -72,16 +81,21 @@ function toneClasses(tone: CommunityTone) {
 }
 
 export function CommunityPage() {
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, user } = useAuth();
   const [selectedCommunityId, setSelectedCommunityId] = useState<string | null>(null);
   const {
     communities,
     posts,
     challenges,
+    members,
     createCommunity,
     joinCommunity: joinCommunityMutation,
     joinChallenge: joinChallengeMutation,
     updateParticipation: updateParticipationMutation,
+    leaveCommunity: leaveCommunityMutation,
+    makeAdmin: makeAdminMutation,
+    removeAdmin: removeAdminMutation,
+    removeMember: removeMemberMutation,
     publishPost: publishPostMutation,
   } = useCommunityData(selectedCommunityId, isAuthenticated);
   const [isCreateOpen, setIsCreateOpen] = useState(false);
@@ -130,11 +144,51 @@ export function CommunityPage() {
     setContribution((current) => ({ ...current, [challengeId]: "" }));
   };
 
-  const publishPost = () => {
+  const publishPost = async () => {
     const body = postBody.trim();
     if (!body || !selectedCommunity) return;
-    void publishPostMutation({ communityId: selectedCommunity.id, content: body });
+    await publishPostMutation({ communityId: selectedCommunity.id, content: body });
     setPostBody("");
+  };
+
+  const deleteCommunity = async () => {
+    if (!selectedCommunity || !selectedCommunity.isOwner) return;
+    if (
+      !window.confirm(
+        `Delete ${selectedCommunity.name}? This permanently removes the community and its membership.`,
+      )
+    )
+      return;
+    try {
+      await leaveCommunityMutation(selectedCommunity.id);
+    } catch (error) {
+      // The active backend removes owner communities but returns that success state as HTTP 404.
+      if (!(error instanceof ApiError && error.status === 404)) {
+        window.alert(
+          error instanceof Error ? error.message : "The community could not be deleted.",
+        );
+        return;
+      }
+    }
+    setSelectedCommunityId(null);
+  };
+
+  const removeMember = async (memberId: string, memberName: string) => {
+    if (!selectedCommunity || !selectedCommunity.isOwner) return;
+    if (!window.confirm(`Remove ${memberName} from ${selectedCommunity.name}?`)) return;
+    await removeMemberMutation({ communityId: selectedCommunity.id, userId: memberId });
+  };
+
+  const toggleMemberAdmin = async (memberId: string, memberName: string, isAdmin: boolean) => {
+    if (!selectedCommunity || !selectedCommunity.isOwner) return;
+    if (
+      !window.confirm(
+        `${isAdmin ? "Remove admin access from" : "Make"} ${memberName} ${isAdmin ? "" : "an admin of"} ${selectedCommunity.name}?`,
+      )
+    )
+      return;
+    if (isAdmin) await removeAdminMutation({ communityId: selectedCommunity.id, userId: memberId });
+    else await makeAdminMutation({ communityId: selectedCommunity.id, userId: memberId });
   };
 
   if (selectedCommunity) {
@@ -148,11 +202,18 @@ export function CommunityPage() {
           .map((challenge) => challenge.id)}
         progress={{}}
         contribution={contribution}
+        members={members}
+        viewerId={user?.id}
         postBody={postBody}
         isAuthenticated={isAuthenticated}
         onBack={() => setSelectedCommunityId(null)}
         onPostBodyChange={setPostBody}
-        onPublishPost={() => requireAuthentication(publishPost)}
+        onPublishPost={() => requireAuthentication(() => void publishPost())}
+        onDeleteCommunity={() => void deleteCommunity()}
+        onRemoveMember={(memberId, memberName) => void removeMember(memberId, memberName)}
+        onToggleMemberAdmin={(memberId, memberName, isAdmin) =>
+          void toggleMemberAdmin(memberId, memberName, isAdmin)
+        }
         onToggleChallenge={toggleChallenge}
         onContributionChange={(id, value) =>
           setContribution((current) => ({ ...current, [id]: value }))
@@ -338,11 +399,16 @@ function CommunityDetail({
   joinedChallenges,
   progress,
   contribution,
+  members,
+  viewerId,
   postBody,
   isAuthenticated,
   onBack,
   onPostBodyChange,
   onPublishPost,
+  onDeleteCommunity,
+  onRemoveMember,
+  onToggleMemberAdmin,
   onToggleChallenge,
   onContributionChange,
   onAddContribution,
@@ -353,11 +419,16 @@ function CommunityDetail({
   joinedChallenges: string[];
   progress: Record<string, number>;
   contribution: Record<string, string>;
+  members: Array<{ userId: string; userName: string; isAdmin: boolean }>;
+  viewerId?: string;
   postBody: string;
   isAuthenticated: boolean;
   onBack: () => void;
   onPostBodyChange: (value: string) => void;
   onPublishPost: () => void;
+  onDeleteCommunity: () => void;
+  onRemoveMember: (memberId: string, memberName: string) => void;
+  onToggleMemberAdmin: (memberId: string, memberName: string, isAdmin: boolean) => void;
   onToggleChallenge: (id: string) => void;
   onContributionChange: (id: string, value: string) => void;
   onAddContribution: (id: string, target: number) => void;
@@ -451,6 +522,16 @@ function CommunityDetail({
         </section>
 
         <aside className="space-y-5 lg:col-span-5">
+          {community.isOwner && (
+            <CommunityManagementPanel
+              community={community}
+              members={members}
+              viewerId={viewerId}
+              onDeleteCommunity={onDeleteCommunity}
+              onRemoveMember={onRemoveMember}
+              onToggleMemberAdmin={onToggleMemberAdmin}
+            />
+          )}
           <div>
             <p className="text-xs font-mono uppercase tracking-[0.22em] text-brand">Crew goals</p>
             <h2 className="mt-1 font-display text-3xl tracking-tight">CHALLENGES</h2>
@@ -539,6 +620,102 @@ function CommunityDetail({
   );
 }
 
+function CommunityManagementPanel({
+  community,
+  members,
+  viewerId,
+  onDeleteCommunity,
+  onRemoveMember,
+  onToggleMemberAdmin,
+}: {
+  community: Community;
+  members: Array<{ userId: string; userName: string; isAdmin: boolean }>;
+  viewerId?: string;
+  onDeleteCommunity: () => void;
+  onRemoveMember: (memberId: string, memberName: string) => void;
+  onToggleMemberAdmin: (memberId: string, memberName: string, isAdmin: boolean) => void;
+}) {
+  return (
+    <section className="rounded-3xl border border-brand/25 bg-brand/5 p-5">
+      <div className="flex items-start justify-between gap-4">
+        <div>
+          <p className="text-xs font-mono uppercase tracking-[0.2em] text-brand">
+            Creator controls
+          </p>
+          <h2 className="mt-1 font-display text-2xl tracking-tight">MANAGE CREW</h2>
+        </div>
+        <Shield className="text-brand" size={22} />
+      </div>
+      <p className="mt-3 text-sm leading-6 text-muted-foreground">
+        As the creator, you can manage access, promote trusted members, and remove the community
+        when it is no longer needed.
+      </p>
+      <div className="mt-5 max-h-72 space-y-2 overflow-y-auto pr-1">
+        {members.length ? (
+          members.map((member) => {
+            const isCreator = member.userId === community.ownerId;
+            const isSelf = member.userId === viewerId;
+            return (
+              <div key={member.userId} className="rounded-2xl border border-border bg-card p-3">
+                <div className="flex items-center justify-between gap-3">
+                  <div className="min-w-0">
+                    <p className="truncate text-sm font-bold">
+                      {member.userName}
+                      {isSelf ? " (you)" : ""}
+                    </p>
+                    <p className="mt-0.5 text-[10px] font-mono uppercase tracking-widest text-muted-foreground">
+                      {isCreator ? "Creator" : member.isAdmin ? "Admin" : "Member"}
+                    </p>
+                  </div>
+                  {!isCreator && (
+                    <div className="flex shrink-0 items-center gap-1">
+                      <button
+                        type="button"
+                        onClick={() =>
+                          onToggleMemberAdmin(member.userId, member.userName, member.isAdmin)
+                        }
+                        className="grid size-8 place-items-center rounded-lg text-brand hover:bg-brand/10"
+                        aria-label={
+                          member.isAdmin
+                            ? `Remove ${member.userName} as an admin`
+                            : `Make ${member.userName} an admin`
+                        }
+                        title={member.isAdmin ? "Remove admin" : "Make admin"}
+                      >
+                        {member.isAdmin ? <Shield size={15} /> : <UserPlus size={15} />}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => onRemoveMember(member.userId, member.userName)}
+                        className="grid size-8 place-items-center rounded-lg text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
+                        aria-label={`Remove ${member.userName}`}
+                        title="Remove member"
+                      >
+                        <UserMinus size={15} />
+                      </button>
+                    </div>
+                  )}
+                </div>
+              </div>
+            );
+          })
+        ) : (
+          <p className="rounded-2xl border border-dashed border-border bg-card/50 p-4 text-sm text-muted-foreground">
+            Loading your community members…
+          </p>
+        )}
+      </div>
+      <button
+        type="button"
+        onClick={onDeleteCommunity}
+        className="mt-5 inline-flex w-full items-center justify-center gap-2 rounded-2xl border border-destructive/35 bg-destructive/10 px-4 py-3 text-sm font-bold text-destructive transition-colors hover:bg-destructive hover:text-destructive-foreground"
+      >
+        <Trash2 size={16} /> Delete community
+      </button>
+    </section>
+  );
+}
+
 function CommunityPostCard({ post }: { post: CommunityPost }) {
   return (
     <article className="rounded-3xl border border-border bg-card p-5">
@@ -609,6 +786,10 @@ function CreateCommunityDialog({
       tone: "brand",
       initials: initials || "RC",
       joined: true,
+      ownerId: "",
+      isOwner: true,
+      isAdmin: true,
+      adminIds: [],
     });
     setName("");
     setDescription("");
