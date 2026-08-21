@@ -11,6 +11,10 @@ import {
   UsersRound,
 } from "lucide-react";
 import {
+  optionalBackendFeaturesEnabled,
+  optionalBackendFeaturesMessage,
+} from "@/core/api/capabilities";
+import {
   chatApi,
   coachApi,
   followApi,
@@ -43,15 +47,25 @@ export function HubPage() {
   const notifications = useQuery({
     queryKey: hubKeys.notifications,
     queryFn: notificationApi.getAll,
+    enabled: optionalBackendFeaturesEnabled,
   });
   const following = useQuery({ queryKey: hubKeys.following, queryFn: followApi.getFollowing });
   const followers = useQuery({ queryKey: hubKeys.followers, queryFn: followApi.getFollowers });
-  const coaches = useQuery({ queryKey: hubKeys.coaches, queryFn: coachApi.getAll });
+  const coaches = useQuery({
+    queryKey: hubKeys.coaches,
+    queryFn: coachApi.getAll,
+    enabled: optionalBackendFeaturesEnabled,
+  });
   const templates = useQuery({
     queryKey: hubKeys.templates,
     queryFn: workoutPlanningApi.getTemplates,
+    enabled: optionalBackendFeaturesEnabled,
   });
-  const plans = useQuery({ queryKey: hubKeys.plans, queryFn: workoutPlanningApi.getPlans });
+  const plans = useQuery({
+    queryKey: hubKeys.plans,
+    queryFn: workoutPlanningApi.getPlans,
+    enabled: optionalBackendFeaturesEnabled,
+  });
   const messages = useQuery({
     queryKey: hubKeys.messages(recipientId || "none"),
     queryFn: () => chatApi.getHistory(recipientId),
@@ -135,6 +149,12 @@ export function HubPage() {
           <p className="mt-1 font-display text-3xl text-brand">{unread.length}</p>
         </div>
       </header>
+
+      {!optionalBackendFeaturesEnabled && (
+        <p className="rounded-2xl border border-amber-400/30 bg-amber-400/10 px-4 py-3 text-sm text-amber-200">
+          {optionalBackendFeaturesMessage}
+        </p>
+      )}
 
       <div className="grid gap-8 xl:grid-cols-2">
         <HubPanel

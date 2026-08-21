@@ -3,6 +3,10 @@ import * as Dialog from "@radix-ui/react-dialog";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
 import { Check, ImagePlus, LoaderCircle, Play, Plus, Trash2, X } from "lucide-react";
+import {
+  optionalBackendFeaturesEnabled,
+  optionalBackendFeaturesMessage,
+} from "@/core/api/capabilities";
 import { ApiError } from "@/core/api/client";
 import { exerciseApi, mediaApi, postApi, userSessionApi } from "@/core/api/repflow";
 import { profileQueryKeys } from "@/features/profile/useProfile";
@@ -23,7 +27,7 @@ export function LogWorkoutCard() {
   const exercisesQuery = useQuery({
     queryKey: ["exercises"],
     queryFn: exerciseApi.getAll,
-    enabled: open,
+    enabled: open && optionalBackendFeaturesEnabled,
   });
   const saveMutation = useMutation({
     mutationFn: async () => {
@@ -195,6 +199,11 @@ export function LogWorkoutCard() {
                 {exercisesQuery.isLoading && (
                   <p className="text-sm text-muted-foreground">Loading exercises…</p>
                 )}
+                {!optionalBackendFeaturesEnabled && (
+                  <p className="rounded-xl border border-amber-400/30 bg-amber-400/10 p-3 text-sm text-amber-200">
+                    {optionalBackendFeaturesMessage}
+                  </p>
+                )}
                 {exercisesQuery.error && (
                   <p className="rounded-xl border border-destructive/30 bg-destructive/10 p-3 text-sm text-destructive">
                     The running backend did not provide the exercise catalog needed for workout
@@ -303,7 +312,8 @@ export function LogWorkoutCard() {
                 disabled={
                   saveMutation.isPending ||
                   exercisesQuery.isLoading ||
-                  Boolean(exercisesQuery.error)
+                  Boolean(exercisesQuery.error) ||
+                  !optionalBackendFeaturesEnabled
                 }
                 className="inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-brand px-5 py-3.5 font-bold text-brand-foreground disabled:opacity-60"
               >

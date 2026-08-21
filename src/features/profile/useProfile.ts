@@ -1,4 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
+import { optionalBackendFeaturesEnabled } from "@/core/api/capabilities";
 import { physicalDataApi, postApi, sessionApi, userApi } from "@/core/api/repflow";
 
 export const profileQueryKeys = {
@@ -19,17 +20,17 @@ export function useProfile(userId: string | undefined, enabled: boolean) {
   const postsQuery = useQuery({
     queryKey: profileQueryKeys.posts(userId ?? "none"),
     queryFn: () => postApi.getByUser(userId!),
-    enabled: active,
+    enabled: active && optionalBackendFeaturesEnabled,
   });
   const physicalQuery = useQuery({
     queryKey: profileQueryKeys.physical(userId ?? "none"),
     queryFn: () => physicalDataApi.get(userId!),
-    enabled: active,
+    enabled: active && optionalBackendFeaturesEnabled,
   });
   const sessionsQuery = useQuery({
     queryKey: profileQueryKeys.sessions(),
     queryFn: sessionApi.getAll,
-    enabled: active,
+    enabled: active && optionalBackendFeaturesEnabled,
   });
 
   return {
