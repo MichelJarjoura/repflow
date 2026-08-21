@@ -1,13 +1,19 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { LoaderCircle, Search, UserRound, UsersRound } from "lucide-react";
+import { useNavigate } from "@tanstack/react-router";
+import * as Dialog from "@radix-ui/react-dialog";
+import { Heart, LoaderCircle, MessageCircle, Search, UserRound, UsersRound, X } from "lucide-react";
 import { ApiError } from "@/core/api/client";
-import { userApi } from "@/core/api/repflow";
+import { userApi, type BackendPost } from "@/core/api/repflow";
 import { useFeed } from "@/features/feed/useFeed";
+import { useAuth } from "@/core/auth/useAuth";
 
 export function ExplorePage() {
+  const { user: viewer } = useAuth();
+  const navigate = useNavigate();
   const [query, setQuery] = useState("");
   const [username, setUsername] = useState("");
+  const [selectedPost, setSelectedPost] = useState<BackendPost | null>(null);
   const userSearch = useQuery({
     queryKey: ["explore", "user", username.toLowerCase()],
     queryFn: async () => {
@@ -22,6 +28,10 @@ export function ExplorePage() {
     retry: false,
   });
   const { posts, isLoading: isFeedLoading } = useFeed(false);
+  const openProfile = (userId: string) => {
+    if (viewer?.id === userId) void navigate({ to: "/profile" });
+    else void navigate({ to: "/profile/$userId", params: { userId } });
+  };
 
   return (
     <main className="mx-auto max-w-6xl px-5 py-8 pb-24 sm:px-6 md:pb-10">
@@ -79,7 +89,11 @@ export function ExplorePage() {
         ) : userSearch.isLoading ? (
           <LoadingCard />
         ) : userSearch.data ? (
-          <UserResult user={userSearch.data} />
+          <UserResult
+            user={userSearch.data}
+            isSelf={viewer?.id === userSearch.data.id}
+            onOpenProfile={() => openProfile(userSearch.data.id)}
+          />
         ) : (
           <SearchEmpty unavailable={userSearch.isError} username={username} />
         )}
@@ -98,32 +112,51 @@ export function ExplorePage() {
         {isFeedLoading ? (
           <LoadingCard />
         ) : posts.length ? (
-          <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-4">
-            {posts.slice(0, 12).map((post) => (
-              <article
-                key={post.id}
-                className="group relative aspect-square overflow-hidden rounded-2xl border border-border bg-card"
-              >
-                <div className="absolute inset-0 bg-linear-to-t from-background/90 via-background/10 to-transparent" />
-                {post.mediaUrls[0] ? (
-                  <img
-                    src={post.mediaUrls[0]}
-                    alt="Community post media"
-                    className="size-full object-cover transition-transform duration-300 group-hover:scale-105"
-                    loading="lazy"
-                  />
-                ) : (
-                  <div className="flex size-full items-end bg-[radial-gradient(circle_at_20%_20%,rgba(223,255,0,0.18),transparent_50%)] p-4">
-                    <p className="line-clamp-4 text-sm font-medium leading-6">{post.content}</p>
+          <>
+            <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+              {posts.slice(0, 12).map((post) => (
+                <button
+                  key={post.id}
+                  type="button"
+                  onClick={() => setSelectedPost(post)}
+                  className="group overflow-hidden rounded-3xl border border-border bg-card text-left transition-all hover:-translate-y-0.5 hover:border-brand/35 hover:shadow-xl hover:shadow-black/15"
+                >
+                  {post.mediaUrls[0] ? (
+                    <img
+                      src={post.mediaUrls[0]}
+                      alt="Community post media"
+                      className="h-60 w-full object-cover transition-transform duration-300 group-hover:scale-[1.03]"
+                      loading="lazy"
+                    />
+                  ) : (
+                    <div className="flex h-48 items-end bg-[radial-gradient(circle_at_20%_20%,rgba(223,255,0,0.2),transparent_50%)] p-5">
+                      <p className="line-clamp-5 text-sm font-medium leading-6">{post.content}</p>
+                    </div>
+                  )}
+                  <div className="p-5">
+                    <p className="line-clamp-3 text-sm leading-6">{post.content}</p>
+                    <div className="mt-4 flex items-center gap-4 text-xs text-muted-foreground">
+                      <span className="inline-flex items-center gap-1">
+                        <Heart size={14} /> {post.likesCount}
+                      </span>
+                      <span className="inline-flex items-center gap-1">
+                        <MessageCircle size={14} /> {post.commentsCount}
+                      </span>
+                      <span className="ml-auto font-mono text-[10px] uppercase tracking-widest text-brand">
+                        View
+                      </span>
+                    </div>
                   </div>
-                )}
-                <div className="absolute inset-x-0 bottom-0 flex items-center justify-between gap-3 p-3 text-[10px] font-mono uppercase tracking-widest text-foreground/75">
-                  <span>{post.likesCount} likes</span>
-                  <span>{post.commentsCount} comments</span>
-                </div>
-              </article>
-            ))}
-          </div>
+                </button>
+              ))}
+            </div>
+            <PostPreviewDialog
+              post={selectedPost}
+              onOpenChange={(open) => {
+                if (!open) setSelectedPost(null);
+              }}
+            />
+          </>
         ) : (
           <div className="rounded-3xl border border-dashed border-border bg-surface/20 p-10 text-center text-sm text-muted-foreground">
             Public posts will appear here as athletes share their training.
@@ -131,6 +164,65 @@ export function ExplorePage() {
         )}
       </section>
     </main>
+  );
+}
+
+function PostPreviewDialog({
+  post,
+  onOpenChange,
+}: {
+  post: BackendPost | null;
+  onOpenChange: (open: boolean) => void;
+}) {
+  return (
+    <Dialog.Root open={Boolean(post)} onOpenChange={onOpenChange}>
+      <Dialog.Portal>
+        <Dialog.Overlay className="fixed inset-0 z-[100] bg-background/80 backdrop-blur-sm" />
+        <Dialog.Content className="fixed inset-x-3 top-1/2 z-[101] mx-auto max-h-[88vh] w-auto max-w-3xl -translate-y-1/2 overflow-y-auto rounded-3xl border border-border bg-elevated shadow-2xl">
+          <div className="sticky top-0 z-10 flex items-center justify-between border-b border-border bg-elevated/95 p-5 backdrop-blur">
+            <div>
+              <Dialog.Title className="font-display text-3xl tracking-tighter">POST</Dialog.Title>
+              <Dialog.Description className="mt-1 text-xs text-muted-foreground">
+                Shared with the Repflow community
+              </Dialog.Description>
+            </div>
+            <Dialog.Close
+              className="rounded-full p-2 text-muted-foreground hover:bg-surface hover:text-foreground"
+              aria-label="Close post"
+            >
+              <X size={19} />
+            </Dialog.Close>
+          </div>
+          {post && (
+            <article>
+              <div className="p-5 sm:p-7">
+                <p className="whitespace-pre-wrap text-sm leading-7">{post.content}</p>
+              </div>
+              {post.mediaUrls.length > 0 && (
+                <div className="grid gap-1 bg-border sm:grid-cols-2">
+                  {post.mediaUrls.map((url) => (
+                    <img
+                      key={url}
+                      src={url}
+                      alt="Post media"
+                      className="max-h-[60vh] w-full object-cover"
+                    />
+                  ))}
+                </div>
+              )}
+              <div className="flex gap-5 border-t border-border p-5 text-sm text-muted-foreground">
+                <span className="inline-flex items-center gap-2">
+                  <Heart size={17} /> {post.likesCount} likes
+                </span>
+                <span className="inline-flex items-center gap-2">
+                  <MessageCircle size={17} /> {post.commentsCount} comments
+                </span>
+              </div>
+            </article>
+          )}
+        </Dialog.Content>
+      </Dialog.Portal>
+    </Dialog.Root>
   );
 }
 
@@ -172,6 +264,8 @@ function SearchEmpty({ unavailable, username }: { unavailable: boolean; username
 
 function UserResult({
   user,
+  isSelf,
+  onOpenProfile,
 }: {
   user: {
     id: string;
@@ -180,6 +274,8 @@ function UserResult({
     bio?: string | null;
     profilePictureUrl?: string | null;
   };
+  isSelf: boolean;
+  onOpenProfile: () => void;
 }) {
   return (
     <article className="flex flex-col gap-5 rounded-3xl border border-border bg-card p-6 sm:flex-row sm:items-center sm:justify-between">
@@ -201,9 +297,13 @@ function UserResult({
           )}
         </div>
       </div>
-      <span className="w-fit rounded-full border border-brand/25 bg-brand/10 px-4 py-2 text-xs font-bold text-brand">
-        Athlete found
-      </span>
+      <button
+        type="button"
+        onClick={onOpenProfile}
+        className="w-fit rounded-full bg-brand px-4 py-2 text-xs font-bold text-brand-foreground transition-opacity hover:opacity-90"
+      >
+        {isSelf ? "Open your profile" : "View profile"}
+      </button>
     </article>
   );
 }
