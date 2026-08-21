@@ -10,7 +10,14 @@ export function ExplorePage() {
   const [username, setUsername] = useState("");
   const userSearch = useQuery({
     queryKey: ["explore", "user", username.toLowerCase()],
-    queryFn: () => userApi.getByUsername(username),
+    queryFn: async () => {
+      try {
+        return await userApi.getByUsername(username);
+      } catch (error) {
+        if (error instanceof ApiError && error.status === 404) return null;
+        throw error;
+      }
+    },
     enabled: username.length >= 2,
     retry: false,
   });
@@ -74,7 +81,7 @@ export function ExplorePage() {
         ) : userSearch.data ? (
           <UserResult user={userSearch.data} />
         ) : (
-          <SearchEmpty error={userSearch.error} username={username} />
+          <SearchEmpty unavailable={userSearch.isError} username={username} />
         )}
       </section>
 
@@ -150,15 +157,14 @@ function LoadingCard() {
   );
 }
 
-function SearchEmpty({ error, username }: { error: Error | null; username: string }) {
-  const notFound = error instanceof ApiError && error.status === 404;
+function SearchEmpty({ unavailable, username }: { unavailable: boolean; username: string }) {
   return (
     <div className="rounded-3xl border border-dashed border-border bg-surface/20 p-8 text-center">
-      <p className="font-bold">{notFound ? "No athlete found" : "Search unavailable"}</p>
+      <p className="font-bold">{unavailable ? "Search unavailable" : "No athlete found"}</p>
       <p className="mx-auto mt-2 max-w-md text-sm leading-6 text-muted-foreground">
-        {notFound
-          ? `There is no visible account using @${username}. Check the spelling and try the exact username.`
-          : "The user lookup could not be completed right now. Please try again."}
+        {unavailable
+          ? "The user lookup could not be completed right now. Please try again."
+          : `There is no visible account using @${username}. Check the spelling and try the exact username.`}
       </p>
     </div>
   );
