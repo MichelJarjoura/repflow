@@ -16,7 +16,7 @@ export type LocalWorkout = {
   exercises: LocalWorkoutExercise[];
 };
 
-const WORKOUT_EVENT = "repflow:workout-saved";
+const WORKOUT_EVENT = "repflow:workout-changed";
 
 function storageKey(userId: string | undefined) {
   return `repflow_local_workouts_${userId ?? "guest"}`;
@@ -37,6 +37,15 @@ export function storeLocalWorkout(userId: string | undefined, workout: LocalWork
   const workouts = [workout, ...readLocalWorkouts(userId)].slice(0, 100);
   localStorage.setItem(storageKey(userId), JSON.stringify(workouts));
   window.dispatchEvent(new CustomEvent(WORKOUT_EVENT));
+}
+
+export function removeLocalWorkout(userId: string | undefined, workoutId: string) {
+  const workouts = readLocalWorkouts(userId);
+  const remaining = workouts.filter((workout) => workout.id !== workoutId);
+  if (remaining.length === workouts.length) return false;
+  localStorage.setItem(storageKey(userId), JSON.stringify(remaining));
+  window.dispatchEvent(new CustomEvent(WORKOUT_EVENT));
+  return true;
 }
 
 function dateKey(value: string) {

@@ -1,13 +1,20 @@
-import { Calendar, Clock3, Dumbbell, TrendingUp, Zap } from "lucide-react";
+import { Calendar, Clock3, Dumbbell, TrendingUp, Trash2, Zap } from "lucide-react";
 import { useAuth } from "@/core/auth/useAuth";
 import { ConsistencyCalendar } from "./ConsistencyCalendar";
 import { LogWorkoutCard } from "./LogWorkoutCard";
-import { useLocalWorkouts } from "../useLocalWorkouts";
+import { removeLocalWorkout, useLocalWorkouts } from "../useLocalWorkouts";
 
 export function WorkoutsPage() {
   const { user } = useAuth();
   const { workouts, stats } = useLocalWorkouts(user?.id);
   const topLifts = stats.personalRecords.slice(0, 4);
+  const removeWorkout = (workoutId: string) => {
+    if (
+      window.confirm("Remove this workout? Your statistics and history will update immediately.")
+    ) {
+      removeLocalWorkout(user?.id, workoutId);
+    }
+  };
 
   return (
     <main className="mx-auto max-w-6xl space-y-8 px-5 py-8 sm:px-6">
@@ -102,7 +109,7 @@ export function WorkoutsPage() {
             <h2 className="mt-2 font-display text-3xl tracking-tight">WORKOUT HISTORY</h2>
             {workouts.length ? (
               <div className="mt-6 space-y-3">
-                {workouts.slice(0, 4).map((workout) => (
+                {workouts.map((workout) => (
                   <div
                     key={workout.id}
                     className="flex items-center justify-between gap-4 rounded-2xl border border-border bg-surface/25 p-4"
@@ -115,7 +122,17 @@ export function WorkoutsPage() {
                         {new Date(workout.createdAt).toLocaleDateString()}
                       </p>
                     </div>
-                    <p className="shrink-0 font-mono text-sm text-brand">{workout.duration} min</p>
+                    <div className="flex shrink-0 items-center gap-2">
+                      <p className="font-mono text-sm text-brand">{workout.duration} min</p>
+                      <button
+                        type="button"
+                        onClick={() => removeWorkout(workout.id)}
+                        aria-label={`Remove ${workout.title}`}
+                        className="grid size-9 place-items-center rounded-xl text-muted-foreground transition-colors hover:bg-destructive/10 hover:text-destructive"
+                      >
+                        <Trash2 size={16} />
+                      </button>
+                    </div>
                   </div>
                 ))}
               </div>
