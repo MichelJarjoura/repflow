@@ -21,6 +21,7 @@ import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
 
 const links = [
   { to: "/feed", label: "Feed", icon: Home, public: true },
+  { to: "/explore", label: "Explore", icon: Search, public: true },
   { to: "/workouts", label: "Workouts", icon: Dumbbell, public: false },
   { to: "/communities", label: "Communities", icon: UsersRound, public: true },
   { to: "/hub", label: "Athlete Hub", icon: LayoutDashboard, public: false },
