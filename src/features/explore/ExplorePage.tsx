@@ -1,22 +1,13 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { LoaderCircle, Search, UserRound, UsersRound } from "lucide-react";
 import { ApiError } from "@/core/api/client";
 import { userApi } from "@/core/api/repflow";
 import { useFeed } from "@/features/feed/useFeed";
 
-function useDebouncedValue(value: string, delay = 350) {
-  const [debouncedValue, setDebouncedValue] = useState(value);
-  useEffect(() => {
-    const timeout = window.setTimeout(() => setDebouncedValue(value), delay);
-    return () => window.clearTimeout(timeout);
-  }, [delay, value]);
-  return debouncedValue;
-}
-
 export function ExplorePage() {
   const [query, setQuery] = useState("");
-  const username = useDebouncedValue(query.trim().replace(/^@/, ""));
+  const [username, setUsername] = useState("");
   const userSearch = useQuery({
     queryKey: ["explore", "user", username.toLowerCase()],
     queryFn: () => userApi.getByUsername(username),
@@ -38,16 +29,29 @@ export function ExplorePage() {
             Search for a Repflow athlete by username, then discover the training posts shared across
             the community.
           </p>
-          <label className="relative mx-auto mt-7 block max-w-xl text-left">
+          <form
+            className="relative mx-auto mt-7 flex max-w-xl gap-2"
+            onSubmit={(event) => {
+              event.preventDefault();
+              setUsername(query.trim().replace(/^@/, ""));
+            }}
+          >
             <Search className="absolute left-5 top-1/2 -translate-y-1/2 text-brand" size={20} />
             <input
               value={query}
               onChange={(event) => setQuery(event.target.value)}
-              placeholder="Search a username, e.g. @alexlifts"
-              className="w-full rounded-2xl border border-border bg-background py-4 pl-13 pr-5 text-sm outline-none transition focus:border-brand/70 focus:ring-4 focus:ring-brand/10"
+              placeholder="Search the exact username, e.g. @alexlifts"
+              className="min-w-0 flex-1 rounded-2xl border border-border bg-background py-4 pl-13 pr-5 text-sm outline-none transition focus:border-brand/70 focus:ring-4 focus:ring-brand/10"
               autoComplete="off"
             />
-          </label>
+            <button
+              type="submit"
+              disabled={query.trim().replace(/^@/, "").length < 2}
+              className="rounded-2xl bg-brand px-5 text-sm font-bold text-brand-foreground transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-40"
+            >
+              Search
+            </button>
+          </form>
         </div>
       </section>
 
@@ -131,8 +135,8 @@ function SearchHint() {
       </div>
       <p className="mt-4 font-bold">Search by username</p>
       <p className="mx-auto mt-2 max-w-md text-sm leading-6 text-muted-foreground">
-        Start typing a username to find an athlete. The current backend supports exact username
-        lookup, so use the account handle shown on their profile.
+        Enter an athlete’s complete username, then select Search. The current backend supports exact
+        username lookup, so use the account handle shown on their profile.
       </p>
     </div>
   );
