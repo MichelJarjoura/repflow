@@ -1,17 +1,19 @@
 import * as Tabs from "@radix-ui/react-tabs";
 import {
-  Award,
   BarChart3,
   Calendar,
+  Clock3,
+  Flame,
   Grid,
   Settings,
-  Trophy,
+  TrendingUp,
   Users,
   type LucideIcon,
 } from "lucide-react";
 import { useAuth } from "@/core/auth/useAuth";
 import { useProfile } from "../useProfile";
 import { useFeed } from "@/features/feed/useFeed";
+import { useLocalWorkouts } from "@/features/workouts/useLocalWorkouts";
 
 function relativeTime(value: string) {
   const minutes = Math.max(1, Math.round((Date.now() - new Date(value).getTime()) / 60_000));
@@ -22,19 +24,13 @@ function relativeTime(value: string) {
 
 export function ProfilePage() {
   const { user, isAuthenticated } = useAuth();
-  const {
-    profile,
-    physicalData,
-    sessions,
-    isLoading: isProfileLoading,
-    error,
-  } = useProfile(user?.id, isAuthenticated);
+  const { profile, isLoading: isProfileLoading, error } = useProfile(user?.id, isAuthenticated);
   const { posts: feedPosts, isLoading: isFeedLoading } = useFeed(isAuthenticated);
   const posts = feedPosts.filter((post) => post.authorId === user?.id);
   const isLoading = isProfileLoading || isFeedLoading;
   const displayName = profile?.username ?? user?.name ?? "Repflow athlete";
   const handle = profile?.username ?? user?.username ?? "@athlete";
-  const records = physicalData?.personalRecords ?? [];
+  const { workouts, stats } = useLocalWorkouts(user?.id);
 
   return (
     <div className="max-w-5xl mx-auto pb-20 px-4 md:px-8">
@@ -87,13 +83,9 @@ export function ProfilePage() {
           <StatHighlight
             icon={<Calendar size={16} />}
             label="Sessions"
-            value={String(sessions.length)}
+            value={String(stats.totalSessions)}
           />
-          <StatHighlight
-            icon={<Award size={16} />}
-            label="Records"
-            value={String(records.length)}
-          />
+          <StatHighlight icon={<Flame size={16} />} label="Streak" value={`${stats.streak}d`} />
         </div>
       </div>
 
@@ -105,8 +97,7 @@ export function ProfilePage() {
       <Tabs.Root defaultValue="posts" className="mt-16">
         <Tabs.List className="flex border-b border-border px-4 md:px-10 overflow-x-auto no-scrollbar gap-2">
           <TabTrigger value="posts" icon={Grid} label="Feed" />
-          <TabTrigger value="stats" icon={BarChart3} label="Sessions" />
-          <TabTrigger value="prs" icon={Trophy} label="Records" />
+          <TabTrigger value="stats" icon={BarChart3} label="Statistics" />
         </Tabs.List>
         <div className="px-4 md:px-10 pt-8">
           <Tabs.Content value="posts" className="focus:outline-hidden">
@@ -119,6 +110,19 @@ export function ProfilePage() {
                 {posts.map((post) => (
                   <article key={post.id} className="rounded-3xl border border-border bg-card p-6">
                     <p className="whitespace-pre-wrap text-sm leading-7">{post.content}</p>
+                    {post.mediaUrls.length > 0 && (
+                      <div className="mt-5 grid gap-2 sm:grid-cols-2">
+                        {post.mediaUrls.map((url) => (
+                          <img
+                            key={url}
+                            src={url}
+                            alt="Post media"
+                            className="h-48 w-full rounded-2xl object-cover"
+                            loading="lazy"
+                          />
+                        ))}
+                      </div>
+                    )}
                     <div className="mt-5 flex gap-4 text-xs text-muted-foreground">
                       <span>{relativeTime(post.createdAt)}</span>
                       <span>{post.likesCount} likes</span>
@@ -130,51 +134,61 @@ export function ProfilePage() {
             )}
           </Tabs.Content>
           <Tabs.Content value="stats" className="focus:outline-hidden">
-            {sessions.length === 0 ? (
-              <EmptyPanel text="Logged workouts from the backend will appear here." />
+            {workouts.length === 0 ? (
+              <EmptyPanel text="Save a workout from the Performance page to see your personal training statistics here." />
             ) : (
-              <div className="space-y-3">
-                {sessions.map((session) => (
-                  <div
-                    key={session.id}
-                    className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-border bg-card p-5"
-                  >
-                    <div>
-                      <p className="font-bold">{session.description || "Workout session"}</p>
-                      <p className="mt-1 text-sm text-muted-foreground">
-                        {session.muscles.join(" · ") || "General training"}
-                      </p>
+              <div className="space-y-6">
+                <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+                  <ProfileMetric
+                    icon={Calendar}
+                    label="Sessions"
+                    value={String(stats.totalSessions)}
+                    detail="All saved workouts"
+                  />
+                  <ProfileMetric
+                    icon={TrendingUp}
+                    label="Volume"
+                    value={`${Math.round(stats.totalVolume).toLocaleString()} kg`}
+                    detail="Sets × reps × weight"
+                  />
+                  <ProfileMetric
+                    icon={Clock3}
+                    label="Avg. session"
+                    value={`${stats.averageDuration} min`}
+                    detail="Training time"
+                  />
+                  <ProfileMetric
+                    icon={Flame}
+                    label="Current streak"
+                    value={`${stats.streak} day${stats.streak === 1 ? "" : "s"}`}
+                    detail="Consecutive training days"
+                  />
+                </div>
+                <section className="rounded-3xl border border-border bg-card p-6">
+                  <p className="text-[10px] font-mono uppercase tracking-[0.2em] text-brand">
+                    Strength profile
+                  </p>
+                  <h3 className="mt-2 font-display text-3xl tracking-tight">TOP LIFTS</h3>
+                  {stats.personalRecords.length ? (
+                    <div className="mt-5 grid gap-3 sm:grid-cols-2">
+                      {stats.personalRecords.slice(0, 6).map((record) => (
+                        <div
+                          key={record.exercise}
+                          className="flex items-center justify-between rounded-2xl border border-border bg-surface/25 p-4"
+                        >
+                          <p className="truncate pr-3 text-sm font-bold">{record.exercise}</p>
+                          <p className="shrink-0 font-display text-2xl text-brand">
+                            {record.weight} <span className="text-sm">kg</span>
+                          </p>
+                        </div>
+                      ))}
                     </div>
-                    <div className="text-right">
-                      <p className="font-mono text-brand">{session.totalDuration} min</p>
-                      <p className="mt-1 text-xs text-muted-foreground">
-                        {new Date(session.date).toLocaleDateString()}
-                      </p>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </Tabs.Content>
-          <Tabs.Content value="prs" className="focus:outline-hidden">
-            {records.length === 0 ? (
-              <EmptyPanel text="Personal records from your physical-data profile will appear here." />
-            ) : (
-              <div className="grid gap-4 sm:grid-cols-2">
-                {records.map((record) => (
-                  <div
-                    key={`${record.exerciseId}-${record.date}`}
-                    className="rounded-2xl border border-border bg-card p-5"
-                  >
-                    <p className="text-xs font-mono uppercase tracking-widest text-muted-foreground">
-                      {record.exerciseName}
+                  ) : (
+                    <p className="mt-5 text-sm text-muted-foreground">
+                      Add weighted exercises to a saved workout to start building your top lifts.
                     </p>
-                    <p className="mt-2 font-display text-4xl text-brand">{record.maxWeightKg} KG</p>
-                    <p className="mt-2 text-xs text-muted-foreground">
-                      {new Date(record.date).toLocaleDateString()}
-                    </p>
-                  </div>
-                ))}
+                  )}
+                </section>
               </div>
             )}
           </Tabs.Content>
@@ -202,6 +216,29 @@ function TabTrigger({
       <span className="font-mono text-[10px] uppercase tracking-widest">{label}</span>
       <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-brand scale-x-0 group-data-[state=active]:scale-x-100 transition-transform origin-left" />
     </Tabs.Trigger>
+  );
+}
+
+function ProfileMetric({
+  icon: Icon,
+  label,
+  value,
+  detail,
+}: {
+  icon: LucideIcon;
+  label: string;
+  value: string;
+  detail: string;
+}) {
+  return (
+    <div className="rounded-2xl border border-border bg-card p-5">
+      <Icon size={18} className="text-brand" />
+      <p className="mt-4 text-[10px] font-mono uppercase tracking-widest text-muted-foreground">
+        {label}
+      </p>
+      <p className="mt-1 font-display text-3xl tracking-tight">{value}</p>
+      <p className="mt-1 text-xs text-muted-foreground">{detail}</p>
+    </div>
   );
 }
 
