@@ -1,9 +1,8 @@
 import { useMemo } from "react";
-import { useQuery } from "@tanstack/react-query";
 import { Calendar, Dumbbell, Users } from "lucide-react";
-import { communityApi } from "@/core/api/repflow";
-import { useAuth } from "@/core/auth/useAuth";
-import { useLocalWorkouts } from "@/features/workouts/useLocalWorkouts";
+import { useMyCommunities } from "@/features/communities/application/useMyCommunities";
+import { useAuth } from "@/app/auth/useAuth";
+import { useWorkoutHistory } from "@/features/workouts/application/useWorkoutHistory";
 
 function volumeForWorkout(exercises: { sets: string; reps: string; weight: string }[]) {
   return exercises.reduce(
@@ -16,12 +15,8 @@ function volumeForWorkout(exercises: { sets: string; reps: string; weight: strin
 
 export function RightRail() {
   const { user, isAuthenticated } = useAuth();
-  const { workouts, stats } = useLocalWorkouts(user?.id);
-  const communities = useQuery({
-    queryKey: ["communities", "mine"],
-    queryFn: communityApi.getMine,
-    enabled: isAuthenticated,
-  });
+  const { workouts, stats } = useWorkoutHistory(user?.id);
+  const communities = useMyCommunities(isAuthenticated);
   const weeklyVolume = useMemo(() => {
     const start = new Date();
     start.setHours(0, 0, 0, 0);

@@ -1,5 +1,5 @@
 import { Navigate } from "@tanstack/react-router";
-import { useAuth } from "@/core/auth/useAuth";
+import { useAuth } from "@/app/auth/useAuth";
 
 export function RequireAuth({ children }: { children: React.ReactNode }) {
   const { isAuthenticated, isLoading } = useAuth();

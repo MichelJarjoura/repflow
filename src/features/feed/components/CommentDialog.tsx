@@ -2,10 +2,11 @@ import { useState } from "react";
 import * as Dialog from "@radix-ui/react-dialog";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { LoaderCircle, Send, X } from "lucide-react";
-import { commentsApi, postApi, type BackendPost } from "@/core/api/repflow";
+import { feedActions } from "../application/postActions";
+import type { SocialPost } from "@/domain/social/social";
 
 type CommentDialogProps = {
-  post: BackendPost;
+  post: SocialPost;
   open: boolean;
   onOpenChange: (open: boolean) => void;
 };
@@ -22,11 +23,11 @@ export function CommentDialog({ post, open, onOpenChange }: CommentDialogProps) 
   const queryClient = useQueryClient();
   const comments = useQuery({
     queryKey: ["comments", post.id],
-    queryFn: () => commentsApi.getForPost(post.id),
+    queryFn: () => feedActions.listComments(post.id),
     enabled: open,
   });
   const addComment = useMutation({
-    mutationFn: () => postApi.addComment(post.id, comment.trim()),
+    mutationFn: () => feedActions.addComment(post.id, comment.trim()),
     onSuccess: () => {
       setComment("");
       void queryClient.invalidateQueries({ queryKey: ["comments", post.id] });

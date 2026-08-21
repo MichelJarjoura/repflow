@@ -1,28 +1,18 @@
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { LoaderCircle, UserPlus, UsersRound } from "lucide-react";
-import { useAuth } from "@/core/auth/useAuth";
-import { followApi, userApi } from "@/core/api/repflow";
-import { useFeed } from "@/features/feed/useFeed";
+import { useAuth } from "@/app/auth/useAuth";
+import { useAthleteProfile } from "../application/profileActions";
+import { useFeed } from "@/features/feed/application/useFeed";
 
 type AthleteProfilePageProps = { userId: string };
 
 export function AthleteProfilePage({ userId }: AthleteProfilePageProps) {
   const { user: viewer, isAuthenticated } = useAuth();
-  const queryClient = useQueryClient();
-  const athlete = useQuery({
-    queryKey: ["athlete", userId],
-    queryFn: () => userApi.getById(userId),
-  });
-  const following = useQuery({
-    queryKey: ["follows", "following"],
-    queryFn: followApi.getFollowing,
-    enabled: isAuthenticated && viewer?.id !== userId,
-  });
+  const { athlete, following, toggleFollow } = useAthleteProfile(
+    userId,
+    isAuthenticated,
+    viewer?.id,
+  );
   const { posts, isLoading: isPostsLoading } = useFeed(isAuthenticated);
-  const toggleFollow = useMutation({
-    mutationFn: () => followApi.toggle(userId),
-    onSuccess: () => void queryClient.invalidateQueries({ queryKey: ["follows", "following"] }),
-  });
 
   if (athlete.isLoading)
     return (
@@ -51,8 +41,8 @@ export function AthleteProfilePage({ userId }: AthleteProfilePageProps) {
           <div className="-mt-12 flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between">
             <div className="flex min-w-0 items-end gap-4">
               <div className="grid size-24 shrink-0 place-items-center overflow-hidden rounded-3xl border-4 border-card bg-brand/10 font-display text-4xl text-brand">
-                {profile.profilePictureUrl ? (
-                  <img src={profile.profilePictureUrl} alt="" className="size-full object-cover" />
+                {profile.avatarUrl ? (
+                  <img src={profile.avatarUrl} alt="" className="size-full object-cover" />
                 ) : (
                   profile.username.charAt(0).toUpperCase()
                 )}

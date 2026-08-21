@@ -100,7 +100,6 @@ export async function apiRequest<T>(path: string, options: ApiRequestOptions = {
   } catch {
     payload = text;
   }
-
   if (!response.ok) {
     throw new ApiError(
       messageFromPayload(payload, "The request could not be completed."),
@@ -108,6 +107,5 @@ export async function apiRequest<T>(path: string, options: ApiRequestOptions = {
       payload,
     );
   }
-
   return payload as T;
 }

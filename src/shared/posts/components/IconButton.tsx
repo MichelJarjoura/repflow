@@ -1,7 +1,7 @@
 import { Heart, MessageCircle, Send } from "lucide-react";
 import { useState } from "react";
-import { useAuth } from "@/core/auth/useAuth";
-import { AuthModal } from "@/core/auth/components/AuthModal";
+import { useAuth } from "@/app/auth/useAuth";
+import { AuthModal } from "@/app/auth/components/AuthModal";
 
 export function LikeButton({ likes }: { likes: number }) {
   const [liked, setLiked] = useState(false);

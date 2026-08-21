@@ -1,32 +1,20 @@
 import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
 import * as Dialog from "@radix-ui/react-dialog";
 import { Heart, LoaderCircle, MessageCircle, Search, UserRound, UsersRound, X } from "lucide-react";
-import { ApiError } from "@/core/api/client";
-import { userApi, type BackendPost } from "@/core/api/repflow";
-import { useFeed } from "@/features/feed/useFeed";
-import { useAuth } from "@/core/auth/useAuth";
+import { useExactAthleteSearch, usePostAuthor } from "./application/useExploreAthletes";
+import type { Athlete } from "@/domain/athlete/athlete";
+import type { SocialPost } from "@/domain/social/social";
+import { useFeed } from "@/features/feed/application/useFeed";
+import { useAuth } from "@/app/auth/useAuth";
 
 export function ExplorePage() {
   const { user: viewer } = useAuth();
   const navigate = useNavigate();
   const [query, setQuery] = useState("");
   const [username, setUsername] = useState("");
-  const [selectedPost, setSelectedPost] = useState<BackendPost | null>(null);
-  const userSearch = useQuery({
-    queryKey: ["explore", "user", username.toLowerCase()],
-    queryFn: async () => {
-      try {
-        return await userApi.getByUsername(username);
-      } catch (error) {
-        if (error instanceof ApiError && error.status === 404) return null;
-        throw error;
-      }
-    },
-    enabled: username.length >= 2,
-    retry: false,
-  });
+  const [selectedPost, setSelectedPost] = useState<SocialPost | null>(null);
+  const userSearch = useExactAthleteSearch(username);
   const { posts, isLoading: isFeedLoading } = useFeed(false);
   const openProfile = (userId: string) => {
     if (viewer?.id === userId) void navigate({ to: "/profile" });
@@ -149,7 +137,7 @@ function ExplorePostCard({
   onOpenPost,
   onOpenProfile,
 }: {
-  post: BackendPost;
+  post: SocialPost;
   viewer: { id: string; name: string; username: string; avatar?: string } | null;
   onOpenPost: () => void;
   onOpenProfile: (userId: string) => void;
@@ -196,19 +184,15 @@ function AuthorIdentity({
   viewer,
   onOpenProfile,
 }: {
-  post: BackendPost;
+  post: SocialPost;
   viewer: { id: string; name: string; username: string; avatar?: string } | null;
   onOpenProfile: (userId: string) => void;
 }) {
   const isViewer = viewer?.id === post.authorId;
-  const author = useQuery({
-    queryKey: ["post-author", post.authorId],
-    queryFn: () => userApi.getById(post.authorId),
-    enabled: !isViewer,
-  });
+  const author = usePostAuthor(post.authorId, !isViewer);
   const name = isViewer ? viewer.name : (author.data?.username ?? "Loading athlete…");
   const handle = isViewer ? `@${viewer.username}` : author.data ? `@${author.data.username}` : "";
-  const avatar = isViewer ? viewer.avatar : author.data?.profilePictureUrl;
+  const avatar = isViewer ? viewer.avatar : author.data?.avatarUrl;
   return (
     <button
       type="button"
@@ -240,7 +224,7 @@ function PostPreviewDialog({
   onOpenProfile,
   onOpenChange,
 }: {
-  post: BackendPost | null;
+  post: SocialPost | null;
   viewer: { id: string; name: string; username: string; avatar?: string } | null;
   onOpenProfile: (userId: string) => void;
   onOpenChange: (open: boolean) => void;
@@ -339,13 +323,7 @@ function UserResult({
   isSelf,
   onOpenProfile,
 }: {
-  user: {
-    id: string;
-    username: string;
-    email: string;
-    bio?: string | null;
-    profilePictureUrl?: string | null;
-  };
+  user: Athlete;
   isSelf: boolean;
   onOpenProfile: () => void;
 }) {
@@ -353,8 +331,8 @@ function UserResult({
     <article className="flex flex-col gap-5 rounded-3xl border border-border bg-card p-6 sm:flex-row sm:items-center sm:justify-between">
       <div className="flex min-w-0 items-center gap-4">
         <div className="grid size-16 shrink-0 place-items-center overflow-hidden rounded-2xl bg-brand/10 font-display text-2xl text-brand">
-          {user.profilePictureUrl ? (
-            <img src={user.profilePictureUrl} alt="" className="size-full object-cover" />
+          {user.avatarUrl ? (
+            <img src={user.avatarUrl} alt="" className="size-full object-cover" />
           ) : (
             user.username.charAt(0).toUpperCase()
           )}

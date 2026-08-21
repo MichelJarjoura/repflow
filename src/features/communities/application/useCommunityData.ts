@@ -1,12 +1,13 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import {
-  challengeApi,
-  communityApi,
-  postApi,
-  type BackendChallenge,
-  type BackendCommunity,
-  type BackendPost,
-} from "@/core/api/repflow";
+import type {
+  Community as DomainCommunity,
+  CommunityChallenge,
+  CommunityMember,
+} from "@/domain/community/community";
+import type { SocialPost } from "@/domain/social/social";
+import { ApiError } from "@/infrastructure/http/apiClient";
+import { communityRepository } from "@/infrastructure/repositories/communityRepository";
+import { socialRepository } from "@/infrastructure/repositories/socialRepository";
 
 type CommunityTone = "brand" | "violet" | "amber";
 
@@ -50,6 +51,10 @@ export type CommunityChallengeRecord = {
   isJoined: boolean;
 };
 
+export function isOwnerCommunityDeletionCompletion(error: unknown) {
+  return error instanceof ApiError && error.status === 404;
+}
+
 export const communityQueryKeys = {
   all: ["communities"] as const,
   mine: () => [...communityQueryKeys.all, "mine"] as const,
@@ -57,6 +62,7 @@ export const communityQueryKeys = {
   challenges: (communityId: string) =>
     [...communityQueryKeys.all, "challenges", communityId] as const,
   joinedChallenges: () => [...communityQueryKeys.all, "joined-challenges"] as const,
+  members: (communityId: string) => [...communityQueryKeys.all, "members", communityId] as const,
 };
 
 function initials(name: string) {
@@ -71,11 +77,13 @@ function initials(name: string) {
 
 function toneFor(value: string): CommunityTone {
   const tones: CommunityTone[] = ["brand", "violet", "amber"];
-  const index = Array.from(value).reduce((total, character) => total + character.charCodeAt(0), 0);
-  return tones[index % tones.length];
+  return tones[
+    Array.from(value).reduce((total, character) => total + character.charCodeAt(0), 0) %
+      tones.length
+  ];
 }
 
-function mapCommunity(community: BackendCommunity): CommunityRecord {
+function mapCommunity(community: DomainCommunity): CommunityRecord {
   return {
     id: community.id,
     name: community.name,
@@ -89,11 +97,11 @@ function mapCommunity(community: BackendCommunity): CommunityRecord {
     ownerId: community.ownerId,
     isOwner: community.isOwner,
     isAdmin: community.isAdmin,
-    adminIds: community.adminIds ?? [],
+    adminIds: community.adminIds,
   };
 }
 
-function mapPost(post: BackendPost): CommunityPostRecord {
+function mapPost(post: SocialPost): CommunityPostRecord {
   return {
     id: post.id,
     author: "Repflow member",
@@ -106,23 +114,22 @@ function mapPost(post: BackendPost): CommunityPostRecord {
   };
 }
 
-function daysLeft(endDate: string) {
-  const result = Math.ceil((new Date(endDate).getTime() - Date.now()) / 86_400_000);
-  return Math.max(0, result);
-}
-
-function mapChallenge(challenge: BackendChallenge, joined: boolean): CommunityChallengeRecord {
+function mapChallenge(challenge: CommunityChallenge, isJoined: boolean): CommunityChallengeRecord {
+  const daysLeft = Math.max(
+    0,
+    Math.ceil((new Date(challenge.endDate).getTime() - Date.now()) / 86_400_000),
+  );
   return {
-    id: challenge.id ?? `${challenge.communityId}-${challenge.name}`,
+    id: challenge.id,
     title: challenge.name,
     description: challenge.description || "Work with your community to complete this shared goal.",
     target: challenge.goal,
     progress: challenge.progress,
     unit: "progress",
     participants: 0,
-    daysLeft: daysLeft(challenge.endDate),
+    daysLeft,
     accent: "bg-brand",
-    isJoined: joined,
+    isJoined,
   };
 }
 
@@ -130,40 +137,39 @@ export function useCommunityData(selectedCommunityId: string | null, enabled: bo
   const queryClient = useQueryClient();
   const communitiesQuery = useQuery({
     queryKey: communityQueryKeys.mine(),
-    queryFn: communityApi.getMine,
+    queryFn: communityRepository.listMine,
     enabled,
     select: (communities) => communities.map(mapCommunity),
   });
   const postsQuery = useQuery({
     queryKey: communityQueryKeys.posts(selectedCommunityId ?? "none"),
-    queryFn: () => postApi.getByCommunity(selectedCommunityId!),
+    queryFn: () => socialRepository.listByCommunity(selectedCommunityId!),
     enabled: enabled && Boolean(selectedCommunityId),
   });
   const challengesQuery = useQuery({
     queryKey: communityQueryKeys.challenges(selectedCommunityId ?? "none"),
-    queryFn: () => challengeApi.getActiveForCommunity(selectedCommunityId!),
+    queryFn: () => communityRepository.listActiveChallenges(selectedCommunityId!),
     enabled: enabled && Boolean(selectedCommunityId),
   });
   const joinedChallengesQuery = useQuery({
     queryKey: communityQueryKeys.joinedChallenges(),
-    queryFn: challengeApi.getMine,
+    queryFn: communityRepository.listJoinedChallenges,
     enabled,
   });
   const membersQuery = useQuery({
-    queryKey: [...communityQueryKeys.all, "members", selectedCommunityId ?? "none"],
-    queryFn: () => communityApi.getMembers(selectedCommunityId!),
+    queryKey: communityQueryKeys.members(selectedCommunityId ?? "none"),
+    queryFn: () => communityRepository.listMembers(selectedCommunityId!),
     enabled: enabled && Boolean(selectedCommunityId),
   });
 
   const joinedChallengeIds = new Set(
-    (joinedChallengesQuery.data ?? []).map((challenge) => challenge.id).filter(Boolean),
+    (joinedChallengesQuery.data ?? []).map((challenge) => challenge.id),
   );
   const challenges = (challengesQuery.data ?? []).map((challenge) =>
     mapChallenge(challenge, joinedChallengeIds.has(challenge.id)),
   );
-
   const invalidateMine = () =>
-    queryClient.invalidateQueries({ queryKey: communityQueryKeys.mine() });
+    void queryClient.invalidateQueries({ queryKey: communityQueryKeys.mine() });
   const invalidateSelected = () => {
     if (!selectedCommunityId) return;
     void queryClient.invalidateQueries({ queryKey: communityQueryKeys.posts(selectedCommunityId) });
@@ -171,54 +177,54 @@ export function useCommunityData(selectedCommunityId: string | null, enabled: bo
       queryKey: communityQueryKeys.challenges(selectedCommunityId),
     });
     void queryClient.invalidateQueries({
-      queryKey: [...communityQueryKeys.all, "members", selectedCommunityId],
+      queryKey: communityQueryKeys.members(selectedCommunityId),
     });
     void queryClient.invalidateQueries({ queryKey: communityQueryKeys.joinedChallenges() });
     invalidateMine();
   };
 
   const createCommunityMutation = useMutation({
-    mutationFn: communityApi.create,
+    mutationFn: communityRepository.create,
     onSuccess: invalidateMine,
   });
   const joinCommunityMutation = useMutation({
-    mutationFn: communityApi.join,
+    mutationFn: communityRepository.join,
     onSuccess: invalidateMine,
   });
   const joinChallengeMutation = useMutation({
-    mutationFn: challengeApi.join,
+    mutationFn: communityRepository.joinChallenge,
     onSuccess: invalidateSelected,
   });
   const updateParticipationMutation = useMutation({
     mutationFn: ({ challengeId, amount }: { challengeId: string; amount: number }) =>
-      challengeApi.updateParticipation(challengeId, amount),
+      communityRepository.updateChallengeParticipation(challengeId, amount),
     onSuccess: invalidateSelected,
   });
   const leaveCommunityMutation = useMutation({
-    mutationFn: communityApi.leave,
+    mutationFn: communityRepository.leave,
     onSettled: invalidateMine,
   });
   const makeAdminMutation = useMutation({
     mutationFn: ({ communityId, userId }: { communityId: string; userId: string }) =>
-      communityApi.makeAdmin(communityId, userId),
+      communityRepository.promoteAdmin(communityId, userId),
     onSuccess: invalidateSelected,
   });
   const removeAdminMutation = useMutation({
     mutationFn: ({ communityId, userId }: { communityId: string; userId: string }) =>
-      communityApi.removeAdmin(communityId, userId),
+      communityRepository.demoteAdmin(communityId, userId),
     onSuccess: invalidateSelected,
   });
   const removeMemberMutation = useMutation({
     mutationFn: ({ communityId, userId }: { communityId: string; userId: string }) =>
-      communityApi.removeMember(communityId, userId),
+      communityRepository.removeMember(communityId, userId),
     onSuccess: invalidateSelected,
   });
   const publishPostMutation = useMutation({
     mutationFn: ({ communityId, content }: { communityId: string; content: string }) =>
-      postApi.create({ content, communityId }),
+      socialRepository.create({ content, communityId }),
     onSuccess: (post) => {
       if (!selectedCommunityId) return;
-      queryClient.setQueryData<BackendPost[]>(
+      queryClient.setQueryData<SocialPost[]>(
         communityQueryKeys.posts(selectedCommunityId),
         (current = []) => [post, ...current.filter((item) => item.id !== post.id)],
       );
@@ -230,7 +236,7 @@ export function useCommunityData(selectedCommunityId: string | null, enabled: bo
     communities: communitiesQuery.data ?? [],
     posts: (postsQuery.data ?? []).map(mapPost),
     challenges,
-    members: membersQuery.data ?? [],
+    members: (membersQuery.data ?? []) as CommunityMember[],
     isLoading: communitiesQuery.isLoading || postsQuery.isLoading || challengesQuery.isLoading,
     error: communitiesQuery.error ?? postsQuery.error ?? challengesQuery.error,
     createCommunity: createCommunityMutation.mutateAsync,

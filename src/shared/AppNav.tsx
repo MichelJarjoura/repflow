@@ -14,8 +14,8 @@ import {
   Settings,
 } from "lucide-react";
 import avatar from "@/assets/avatar-1.jpg";
-import { useAuth } from "@/core/auth/useAuth";
-import { AuthModal } from "@/core/auth/components/AuthModal";
+import { useAuth } from "@/app/auth/useAuth";
+import { AuthModal } from "@/app/auth/components/AuthModal";
 import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
 
 const links = [

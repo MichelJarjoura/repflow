@@ -6,12 +6,12 @@ import { RightRail } from "./components/RightRail";
 import { FeedFilter } from "./components/FeedFilter";
 import { PostComposer } from "./components/PostComposer";
 import { CommentDialog } from "./components/CommentDialog";
-import { useFeed } from "./useFeed";
-import { useAuth } from "@/core/auth/useAuth";
-import { AuthModal } from "@/core/auth/components/AuthModal";
-import { ApiError } from "@/core/api/client";
-import { postApi, userApi, type BackendPost } from "@/core/api/repflow";
-import type { AuthenticatedUser } from "@/core/api/auth";
+import { useFeed } from "./application/useFeed";
+import { useAuth } from "@/app/auth/useAuth";
+import { AuthModal } from "@/app/auth/components/AuthModal";
+import { describeFeedError, feedActions } from "./application/postActions";
+import type { SocialPost } from "@/domain/social/social";
+import type { AuthenticatedUser } from "@/domain/athlete/authenticatedUser";
 
 function relativeTime(value: string) {
   const minutes = Math.max(1, Math.round((Date.now() - new Date(value).getTime()) / 60_000));
@@ -85,7 +85,7 @@ function BackendFeedPost({
   onToggleLike,
   viewer,
 }: {
-  post: BackendPost;
+  post: SocialPost;
   onToggleLike: (id: string) => void;
   viewer: AuthenticatedUser | null;
 }) {
@@ -93,15 +93,15 @@ function BackendFeedPost({
   const isViewer = viewer?.id === post.authorId;
   const authorQuery = useQuery({
     queryKey: ["post-author", post.authorId],
-    queryFn: () => userApi.getById(post.authorId),
+    queryFn: () => feedActions.findAuthor(post.authorId),
     enabled: !isViewer,
   });
   const authorName = isViewer ? viewer.name : (authorQuery.data?.username ?? "Repflow athlete");
   const authorHandle = isViewer ? viewer.username : `@${post.authorId.slice(0, 8)}`;
-  const authorAvatar = isViewer ? viewer.avatar : authorQuery.data?.profilePictureUrl;
+  const authorAvatar = isViewer ? viewer.avatar : authorQuery.data?.avatarUrl;
   const queryClient = useQueryClient();
   const deletePost = useMutation({
-    mutationFn: () => postApi.remove(post.id),
+    mutationFn: () => feedActions.deletePost(post.id),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: ["feed"] });
     },
@@ -192,10 +192,7 @@ function FeedLoading() {
   );
 }
 function FeedError({ error, onRetry }: { error: Error; onRetry: () => void }) {
-  const message =
-    error instanceof ApiError && error.status === 404
-      ? "The running backend does not expose a public Posts route, so community posts can work while the global feed stays unavailable."
-      : "The feed could not be loaded from the backend.";
+  const message = describeFeedError(error);
   return (
     <div className="rounded-3xl border border-destructive/30 bg-destructive/10 p-6 text-center">
       <p className="text-sm text-destructive">{message}</p>

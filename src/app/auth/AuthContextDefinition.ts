@@ -1,11 +1,11 @@
 import { createContext } from "react";
 import type {
   AuthenticatedUser,
-  LoginInput,
-  RegisterInput,
-  ResetPasswordInput,
-  VerifyEmailInput,
-} from "@/core/api/auth";
+  LoginCredentials,
+  RegisterCredentials,
+  ResetPasswordCommand,
+  VerifyEmailCommand,
+} from "@/domain/athlete/authenticatedUser";
 
 export type User = AuthenticatedUser;
 
@@ -14,11 +14,11 @@ export type AuthContextType = {
   isAuthenticated: boolean;
   isLoading: boolean;
   error: string | null;
-  login: (input: LoginInput) => Promise<void>;
-  register: (input: RegisterInput) => Promise<User | null>;
-  verifyEmail: (input: VerifyEmailInput) => Promise<void>;
+  login: (input: LoginCredentials) => Promise<void>;
+  register: (input: RegisterCredentials) => Promise<User | null>;
+  verifyEmail: (input: VerifyEmailCommand) => Promise<void>;
   forgotPassword: (email: string) => Promise<void>;
-  resetPassword: (input: ResetPasswordInput) => Promise<void>;
+  resetPassword: (input: ResetPasswordCommand) => Promise<void>;
   logout: () => Promise<void>;
   refreshUser: () => Promise<User | null>;
   clearError: () => void;

@@ -2,13 +2,15 @@ import { useCallback, useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   ApiError,
-  authApi,
+  authRepository,
   clearSessionToken,
-  type LoginInput,
-  type RegisterInput,
-  type ResetPasswordInput,
-  type VerifyEmailInput,
-} from "@/core/api/auth";
+} from "@/infrastructure/repositories/authRepository";
+import type {
+  LoginCredentials,
+  RegisterCredentials,
+  ResetPasswordCommand,
+  VerifyEmailCommand,
+} from "@/domain/athlete/authenticatedUser";
 import { AuthContext, type AuthContextType, type User } from "./AuthContextDefinition";
 
 const authKeys = {
@@ -32,20 +34,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const sessionQuery = useQuery({
     queryKey: authKeys.me(),
-    queryFn: authApi.me,
+    queryFn: authRepository.me,
     retry: false,
     staleTime: 5 * 60 * 1000,
   });
 
   const loginMutation = useMutation({
-    mutationFn: authApi.login,
+    mutationFn: authRepository.login,
     onMutate: () => setActionError(null),
     onSuccess: (user) => queryClient.setQueryData(authKeys.me(), user),
     onError: (error) => setActionError(messageFromError(error)),
   });
 
   const registerMutation = useMutation({
-    mutationFn: authApi.register,
+    mutationFn: authRepository.register,
     onMutate: () => setActionError(null),
     onSuccess: (user) => {
       if (user) queryClient.setQueryData(authKeys.me(), user);
@@ -54,26 +56,26 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   });
 
   const verifyMutation = useMutation({
-    mutationFn: authApi.verifyEmail,
+    mutationFn: authRepository.verifyEmail,
     onMutate: () => setActionError(null),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: authKeys.me() }),
     onError: (error) => setActionError(messageFromError(error)),
   });
 
   const forgotMutation = useMutation({
-    mutationFn: authApi.forgotPassword,
+    mutationFn: authRepository.forgotPassword,
     onMutate: () => setActionError(null),
     onError: (error) => setActionError(messageFromError(error)),
   });
 
   const resetMutation = useMutation({
-    mutationFn: authApi.resetPassword,
+    mutationFn: authRepository.resetPassword,
     onMutate: () => setActionError(null),
     onError: (error) => setActionError(messageFromError(error)),
   });
 
   const logoutMutation = useMutation({
-    mutationFn: authApi.logout,
+    mutationFn: authRepository.logout,
     onMutate: () => setActionError(null),
     onError: (error) => setActionError(messageFromError(error)),
     onSettled: () => {
@@ -84,7 +86,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const refreshUser = useCallback(async () => {
     try {
-      return await queryClient.fetchQuery({ queryKey: authKeys.me(), queryFn: authApi.me });
+      return await queryClient.fetchQuery({ queryKey: authKeys.me(), queryFn: authRepository.me });
     } catch (error) {
       if (isUnauthenticated(error)) clearSessionToken();
       queryClient.setQueryData<User | null>(authKeys.me(), null);
@@ -112,18 +114,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       isAuthenticated: Boolean(user),
       isLoading,
       error: actionError,
-      login: async (input: LoginInput) => {
+      login: async (input: LoginCredentials) => {
         await loginMutation.mutateAsync(input);
       },
-      register: (input: RegisterInput) => registerMutation.mutateAsync(input),
-      verifyEmail: async (input: VerifyEmailInput) => {
+      register: (input: RegisterCredentials) => registerMutation.mutateAsync(input),
+      verifyEmail: async (input: VerifyEmailCommand) => {
         await verifyMutation.mutateAsync(input);
         await refreshUser();
       },
       forgotPassword: async (email: string) => {
         await forgotMutation.mutateAsync(email);
       },
-      resetPassword: async (input: ResetPasswordInput) => {
+      resetPassword: async (input: ResetPasswordCommand) => {
         await resetMutation.mutateAsync(input);
       },
       logout: async () => {

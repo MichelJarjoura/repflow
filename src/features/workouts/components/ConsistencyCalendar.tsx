@@ -1,6 +1,6 @@
 import { useMemo } from "react";
 import { addDays, eachDayOfInterval, format, startOfToday, startOfWeek, subWeeks } from "date-fns";
-import type { LocalWorkout } from "../useLocalWorkouts";
+import type { LocalWorkout } from "../application/useWorkoutHistory";
 
 type ConsistencyCalendarProps = {
   workouts: LocalWorkout[];

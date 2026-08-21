@@ -18,10 +18,12 @@ import {
   Users,
   X,
 } from "lucide-react";
-import { useAuth } from "@/core/auth/useAuth";
-import { AuthModal } from "@/core/auth/components/AuthModal";
-import { useCommunityData } from "./communityQueries";
-import { ApiError } from "@/core/api/client";
+import { useAuth } from "@/app/auth/useAuth";
+import { AuthModal } from "@/app/auth/components/AuthModal";
+import {
+  isOwnerCommunityDeletionCompletion,
+  useCommunityData,
+} from "./application/useCommunityData";
 
 type CommunityTone = "brand" | "violet" | "amber";
 
@@ -163,7 +165,7 @@ export function CommunityPage() {
       await leaveCommunityMutation(selectedCommunity.id);
     } catch (error) {
       // The active backend removes owner communities but returns that success state as HTTP 404.
-      if (!(error instanceof ApiError && error.status === 404)) {
+      if (!isOwnerCommunityDeletionCompletion(error)) {
         window.alert(
           error instanceof Error ? error.message : "The community could not be deleted.",
         );

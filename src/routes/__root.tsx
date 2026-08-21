@@ -8,9 +8,9 @@ import {
   Scripts,
 } from "@tanstack/react-router";
 
-import appCss from "../core/styles.css?url";
+import appCss from "../app/styles.css?url";
 import { AppNav } from "@/shared/AppNav";
-import { AuthProvider } from "@/core/auth/AuthContext";
+import { AuthProvider } from "@/app/auth/AuthContext";
 
 function NotFoundComponent() {
   return (

@@ -1,13 +1,13 @@
 import { useMemo, useState } from "react";
 import { ArrowRight, Calendar, Flame, Trophy, Zap } from "lucide-react";
-import { useAuth } from "@/core/auth/useAuth";
-import { AuthModal } from "@/core/auth/components/AuthModal";
-import { useLocalWorkouts } from "@/features/workouts/useLocalWorkouts";
+import { useAuth } from "@/app/auth/useAuth";
+import { AuthModal } from "@/app/auth/components/AuthModal";
+import { useWorkoutHistory } from "@/features/workouts/application/useWorkoutHistory";
 
 export function IdentityCard() {
   const { isAuthenticated, user } = useAuth();
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
-  const { workouts, stats } = useLocalWorkouts(user?.id);
+  const { workouts, stats } = useWorkoutHistory(user?.id);
   const weeklyVolume = useMemo(() => {
     const start = new Date();
     start.setHours(0, 0, 0, 0);

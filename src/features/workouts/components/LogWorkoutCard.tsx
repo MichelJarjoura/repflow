@@ -2,14 +2,14 @@ import { useMemo, useState } from "react";
 import * as Dialog from "@radix-ui/react-dialog";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Check, ChevronRight, Clock3, Dumbbell, LoaderCircle, Plus, Trash2, X } from "lucide-react";
-import { postApi } from "@/core/api/repflow";
-import { useAuth } from "@/core/auth/useAuth";
+import { shareWorkoutToFeed } from "../application/shareWorkout";
+import { useAuth } from "@/app/auth/useAuth";
 import {
   readLocalWorkouts,
   storeLocalWorkout,
   type LocalWorkout,
   type LocalWorkoutExercise,
-} from "../useLocalWorkouts";
+} from "../application/useWorkoutHistory";
 
 type WorkoutSet = LocalWorkoutExercise;
 
@@ -73,7 +73,7 @@ export function LogWorkoutCard() {
         );
         const summary = `${workout.title}\n${workout.duration} min · ${Math.round(estimatedVolume).toLocaleString()} kg volume\n\n${lines.join("\n")}`;
         try {
-          await postApi.create({ content: summary });
+          await shareWorkoutToFeed(summary);
           published = true;
         } catch {
           // The workout remains safely stored in the browser if the active backend does not publish posts.

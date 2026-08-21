@@ -1,6 +1,8 @@
 import { useQuery } from "@tanstack/react-query";
-import { optionalBackendFeaturesEnabled } from "@/core/api/capabilities";
-import { physicalDataApi, postApi, sessionApi, userApi } from "@/core/api/repflow";
+import { optionalBackendFeaturesEnabled } from "@/app/config/featureCapabilities";
+import { athleteRepository } from "@/infrastructure/repositories/athleteRepository";
+import { socialRepository } from "@/infrastructure/repositories/socialRepository";
+import { trainingRepository } from "@/infrastructure/repositories/trainingRepository";
 
 export const profileQueryKeys = {
   all: ["profile"] as const,
@@ -14,25 +16,24 @@ export function useProfile(userId: string | undefined, enabled: boolean) {
   const active = enabled && Boolean(userId);
   const userQuery = useQuery({
     queryKey: profileQueryKeys.user(userId ?? "none"),
-    queryFn: () => userApi.getById(userId!),
+    queryFn: () => athleteRepository.findById(userId!),
     enabled: active,
   });
   const postsQuery = useQuery({
     queryKey: profileQueryKeys.posts(userId ?? "none"),
-    queryFn: () => postApi.getByUser(userId!),
+    queryFn: () => socialRepository.listByAuthor(userId!),
     enabled: active && optionalBackendFeaturesEnabled,
   });
   const physicalQuery = useQuery({
     queryKey: profileQueryKeys.physical(userId ?? "none"),
-    queryFn: () => physicalDataApi.get(userId!),
+    queryFn: () => athleteRepository.getPhysicalData(userId!),
     enabled: active && optionalBackendFeaturesEnabled,
   });
   const sessionsQuery = useQuery({
     queryKey: profileQueryKeys.sessions(),
-    queryFn: sessionApi.getAll,
+    queryFn: trainingRepository.listSessions,
     enabled: active && optionalBackendFeaturesEnabled,
   });
-
   return {
     profile: userQuery.data,
     posts: postsQuery.data ?? [],

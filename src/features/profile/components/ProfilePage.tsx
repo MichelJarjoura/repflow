@@ -13,11 +13,11 @@ import {
   Users,
   type LucideIcon,
 } from "lucide-react";
-import { useAuth } from "@/core/auth/useAuth";
-import { useProfile } from "../useProfile";
-import { useFeed } from "@/features/feed/useFeed";
-import { useLocalWorkouts } from "@/features/workouts/useLocalWorkouts";
-import { postApi } from "@/core/api/repflow";
+import { useAuth } from "@/app/auth/useAuth";
+import { useProfile } from "../application/useProfile";
+import { useFeed } from "@/features/feed/application/useFeed";
+import { useWorkoutHistory } from "@/features/workouts/application/useWorkoutHistory";
+import { profileActions } from "../application/profileActions";
 
 function relativeTime(value: string) {
   const minutes = Math.max(1, Math.round((Date.now() - new Date(value).getTime()) / 60_000));
@@ -34,10 +34,10 @@ export function ProfilePage() {
   const isLoading = isProfileLoading || isFeedLoading;
   const displayName = profile?.username ?? user?.name ?? "Repflow athlete";
   const handle = profile?.username ?? user?.username ?? "@athlete";
-  const { workouts, stats } = useLocalWorkouts(user?.id);
+  const { workouts, stats } = useWorkoutHistory(user?.id);
   const queryClient = useQueryClient();
   const deletePost = useMutation({
-    mutationFn: (postId: string) => postApi.remove(postId),
+    mutationFn: (postId: string) => profileActions.deletePost(postId),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: ["feed"] });
     },

@@ -1,12 +1,12 @@
 import { Calendar, Clock3, Dumbbell, TrendingUp, Trash2, Zap } from "lucide-react";
-import { useAuth } from "@/core/auth/useAuth";
+import { useAuth } from "@/app/auth/useAuth";
 import { ConsistencyCalendar } from "./ConsistencyCalendar";
 import { LogWorkoutCard } from "./LogWorkoutCard";
-import { removeLocalWorkout, useLocalWorkouts } from "../useLocalWorkouts";
+import { removeLocalWorkout, useWorkoutHistory } from "../application/useWorkoutHistory";
 
 export function WorkoutsPage() {
   const { user } = useAuth();
-  const { workouts, stats } = useLocalWorkouts(user?.id);
+  const { workouts, stats } = useWorkoutHistory(user?.id);
   const topLifts = stats.personalRecords.slice(0, 4);
   const removeWorkout = (workoutId: string) => {
     if (

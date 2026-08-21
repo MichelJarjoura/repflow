@@ -1,8 +1,8 @@
 import { useRef, useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { ImagePlus, LoaderCircle, Send, X } from "lucide-react";
-import { mediaApi, postApi } from "@/core/api/repflow";
-import { feedQueryKeys } from "../useFeed";
+import { feedActions } from "../application/postActions";
+import { feedQueryKeys } from "../application/useFeed";
 
 type PostComposerProps = { onPublished?: () => void };
 
@@ -15,8 +15,12 @@ export function PostComposer({ onPublished }: PostComposerProps) {
     mutationFn: async () => {
       const trimmedContent = content.trim();
       if (!trimmedContent) throw new Error("Write a short update before publishing your post.");
-      const mediaUrls = files.length ? (await mediaApi.uploadPostMedia(files)).urls : undefined;
-      return postApi.create({ content: trimmedContent, communityId: undefined, mediaUrls });
+      const mediaUrls = files.length ? await feedActions.uploadMedia(files) : undefined;
+      return feedActions.createPost({
+        content: trimmedContent,
+        communityId: undefined,
+        mediaUrls,
+      });
     },
     onSuccess: () => {
       setContent("");
