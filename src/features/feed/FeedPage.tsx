@@ -4,6 +4,7 @@ import { Heart, LoaderCircle, MessageCircle, PlusCircle, RefreshCw, Send } from 
 import { IdentityCard } from "./components/IdentityCard";
 import { RightRail } from "./components/RightRail";
 import { FeedFilter } from "./components/FeedFilter";
+import { PostComposer } from "./components/PostComposer";
 import { useFeed } from "./useFeed";
 import { useAuth } from "@/core/auth/useAuth";
 import { AuthModal } from "@/core/auth/components/AuthModal";
@@ -54,6 +55,7 @@ export function FeedPage() {
           </div>
         ) : (
           <>
+            <PostComposer onPublished={() => void refetch()} />
             <FeedFilter />
             {isLoading && <FeedLoading />}
             {error && <FeedError onRetry={() => void refetch()} />}

@@ -10,7 +10,7 @@ export function useFeed(enabled: boolean) {
   const queryClient = useQueryClient();
   const postsQuery = useQuery({
     queryKey: feedQueryKeys.posts(),
-    queryFn: postApi.getFeed,
+    queryFn: postApi.getAll,
     enabled,
   });
 
