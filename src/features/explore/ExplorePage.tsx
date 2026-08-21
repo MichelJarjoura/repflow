@@ -115,43 +115,19 @@ export function ExplorePage() {
           <>
             <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
               {posts.slice(0, 12).map((post) => (
-                <button
+                <ExplorePostCard
                   key={post.id}
-                  type="button"
-                  onClick={() => setSelectedPost(post)}
-                  className="group overflow-hidden rounded-3xl border border-border bg-card text-left transition-all hover:-translate-y-0.5 hover:border-brand/35 hover:shadow-xl hover:shadow-black/15"
-                >
-                  {post.mediaUrls[0] ? (
-                    <img
-                      src={post.mediaUrls[0]}
-                      alt="Community post media"
-                      className="h-60 w-full object-cover transition-transform duration-300 group-hover:scale-[1.03]"
-                      loading="lazy"
-                    />
-                  ) : (
-                    <div className="flex h-48 items-end bg-[radial-gradient(circle_at_20%_20%,rgba(223,255,0,0.2),transparent_50%)] p-5">
-                      <p className="line-clamp-5 text-sm font-medium leading-6">{post.content}</p>
-                    </div>
-                  )}
-                  <div className="p-5">
-                    <p className="line-clamp-3 text-sm leading-6">{post.content}</p>
-                    <div className="mt-4 flex items-center gap-4 text-xs text-muted-foreground">
-                      <span className="inline-flex items-center gap-1">
-                        <Heart size={14} /> {post.likesCount}
-                      </span>
-                      <span className="inline-flex items-center gap-1">
-                        <MessageCircle size={14} /> {post.commentsCount}
-                      </span>
-                      <span className="ml-auto font-mono text-[10px] uppercase tracking-widest text-brand">
-                        View
-                      </span>
-                    </div>
-                  </div>
-                </button>
+                  post={post}
+                  viewer={viewer}
+                  onOpenPost={() => setSelectedPost(post)}
+                  onOpenProfile={openProfile}
+                />
               ))}
             </div>
             <PostPreviewDialog
               post={selectedPost}
+              viewer={viewer}
+              onOpenProfile={openProfile}
               onOpenChange={(open) => {
                 if (!open) setSelectedPost(null);
               }}
@@ -167,11 +143,106 @@ export function ExplorePage() {
   );
 }
 
+function ExplorePostCard({
+  post,
+  viewer,
+  onOpenPost,
+  onOpenProfile,
+}: {
+  post: BackendPost;
+  viewer: { id: string; name: string; username: string; avatar?: string } | null;
+  onOpenPost: () => void;
+  onOpenProfile: (userId: string) => void;
+}) {
+  return (
+    <article className="group overflow-hidden rounded-3xl border border-border bg-card transition-all hover:-translate-y-0.5 hover:border-brand/35 hover:shadow-xl hover:shadow-black/15">
+      <div className="p-4">
+        <AuthorIdentity post={post} viewer={viewer} onOpenProfile={onOpenProfile} />
+      </div>
+      <button type="button" onClick={onOpenPost} className="block w-full text-left">
+        {post.mediaUrls[0] ? (
+          <img
+            src={post.mediaUrls[0]}
+            alt="Community post media"
+            className="h-60 w-full object-cover transition-transform duration-300 group-hover:scale-[1.03]"
+            loading="lazy"
+          />
+        ) : (
+          <div className="flex h-48 items-end bg-[radial-gradient(circle_at_20%_20%,rgba(223,255,0,0.2),transparent_50%)] p-5">
+            <p className="line-clamp-5 text-sm font-medium leading-6">{post.content}</p>
+          </div>
+        )}
+        <div className="p-5">
+          <p className="line-clamp-3 text-sm leading-6">{post.content}</p>
+          <div className="mt-4 flex items-center gap-4 text-xs text-muted-foreground">
+            <span className="inline-flex items-center gap-1">
+              <Heart size={14} /> {post.likesCount}
+            </span>
+            <span className="inline-flex items-center gap-1">
+              <MessageCircle size={14} /> {post.commentsCount}
+            </span>
+            <span className="ml-auto font-mono text-[10px] uppercase tracking-widest text-brand">
+              View
+            </span>
+          </div>
+        </div>
+      </button>
+    </article>
+  );
+}
+
+function AuthorIdentity({
+  post,
+  viewer,
+  onOpenProfile,
+}: {
+  post: BackendPost;
+  viewer: { id: string; name: string; username: string; avatar?: string } | null;
+  onOpenProfile: (userId: string) => void;
+}) {
+  const isViewer = viewer?.id === post.authorId;
+  const author = useQuery({
+    queryKey: ["post-author", post.authorId],
+    queryFn: () => userApi.getById(post.authorId),
+    enabled: !isViewer,
+  });
+  const name = isViewer ? viewer.name : (author.data?.username ?? "Loading athlete…");
+  const handle = isViewer ? `@${viewer.username}` : author.data ? `@${author.data.username}` : "";
+  const avatar = isViewer ? viewer.avatar : author.data?.profilePictureUrl;
+  return (
+    <button
+      type="button"
+      onClick={() => onOpenProfile(post.authorId)}
+      className="flex min-w-0 items-center gap-3 text-left transition-opacity hover:opacity-80"
+    >
+      <div className="grid size-10 shrink-0 place-items-center overflow-hidden rounded-full bg-brand/15 font-display text-sm text-brand">
+        {avatar ? (
+          <img src={avatar} alt="" className="size-full object-cover" />
+        ) : (
+          name.slice(0, 1).toUpperCase()
+        )}
+      </div>
+      <div className="min-w-0">
+        <p className="truncate text-sm font-bold">{name}</p>
+        {handle && (
+          <p className="mt-0.5 truncate text-[10px] font-mono uppercase tracking-widest text-muted-foreground">
+            {handle}
+          </p>
+        )}
+      </div>
+    </button>
+  );
+}
+
 function PostPreviewDialog({
   post,
+  viewer,
+  onOpenProfile,
   onOpenChange,
 }: {
   post: BackendPost | null;
+  viewer: { id: string; name: string; username: string; avatar?: string } | null;
+  onOpenProfile: (userId: string) => void;
   onOpenChange: (open: boolean) => void;
 }) {
   return (
@@ -196,7 +267,8 @@ function PostPreviewDialog({
           {post && (
             <article>
               <div className="p-5 sm:p-7">
-                <p className="whitespace-pre-wrap text-sm leading-7">{post.content}</p>
+                <AuthorIdentity post={post} viewer={viewer} onOpenProfile={onOpenProfile} />
+                <p className="mt-5 whitespace-pre-wrap text-sm leading-7">{post.content}</p>
               </div>
               {post.mediaUrls.length > 0 && (
                 <div className="grid gap-1 bg-border sm:grid-cols-2">
