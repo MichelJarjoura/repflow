@@ -9,7 +9,8 @@ import { useFeed } from "./useFeed";
 import { useAuth } from "@/core/auth/useAuth";
 import { AuthModal } from "@/core/auth/components/AuthModal";
 import { ApiError } from "@/core/api/client";
-import { commentsApi, postApi, type BackendPost } from "@/core/api/repflow";
+import { commentsApi, postApi, userApi, type BackendPost } from "@/core/api/repflow";
+import type { AuthenticatedUser } from "@/core/api/auth";
 
 function relativeTime(value: string) {
   const minutes = Math.max(1, Math.round((Date.now() - new Date(value).getTime()) / 60_000));
@@ -19,7 +20,7 @@ function relativeTime(value: string) {
 }
 
 export function FeedPage() {
-  const { isAuthenticated } = useAuth();
+  const { user, isAuthenticated } = useAuth();
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const { posts, isLoading, error, refetch, toggleLike } = useFeed(isAuthenticated);
 
@@ -62,7 +63,7 @@ export function FeedPage() {
             {error && <FeedError error={error} onRetry={() => void refetch()} />}
             {!isLoading && !error && posts.length === 0 && <FeedEmpty />}
             {posts.map((post) => (
-              <BackendFeedPost key={post.id} post={post} onToggleLike={toggleLike} />
+              <BackendFeedPost key={post.id} post={post} viewer={user} onToggleLike={toggleLike} />
             ))}
           </>
         )}
@@ -81,11 +82,22 @@ export function FeedPage() {
 function BackendFeedPost({
   post,
   onToggleLike,
+  viewer,
 }: {
   post: BackendPost;
   onToggleLike: (id: string) => void;
+  viewer: AuthenticatedUser | null;
 }) {
   const [commentsOpen, setCommentsOpen] = useState(false);
+  const isViewer = viewer?.id === post.authorId;
+  const authorQuery = useQuery({
+    queryKey: ["post-author", post.authorId],
+    queryFn: () => userApi.getById(post.authorId),
+    enabled: !isViewer,
+  });
+  const authorName = isViewer ? viewer.name : (authorQuery.data?.username ?? "Repflow athlete");
+  const authorHandle = isViewer ? viewer.username : `@${post.authorId.slice(0, 8)}`;
+  const authorAvatar = isViewer ? viewer.avatar : authorQuery.data?.profilePictureUrl;
   const [comment, setComment] = useState("");
   const queryClient = useQueryClient();
   const comments = useQuery({
@@ -104,13 +116,17 @@ function BackendFeedPost({
   return (
     <article className="rounded-3xl border border-border bg-card p-6">
       <div className="flex items-center gap-3">
-        <div className="grid size-11 place-items-center rounded-full bg-brand/15 font-display text-lg text-brand">
-          {post.authorId.slice(0, 1).toUpperCase()}
+        <div className="grid size-11 place-items-center overflow-hidden rounded-full bg-brand/15 font-display text-lg text-brand">
+          {authorAvatar ? (
+            <img src={authorAvatar} alt={authorName} className="size-full object-cover" />
+          ) : (
+            authorName.slice(0, 1).toUpperCase()
+          )}
         </div>
         <div>
-          <p className="font-bold text-foreground">Repflow member</p>
+          <p className="font-bold text-foreground">{authorName}</p>
           <p className="text-xs text-muted-foreground">
-            @{post.authorId.slice(0, 8)} · {relativeTime(post.createdAt)}
+            {authorHandle} · {relativeTime(post.createdAt)}
           </p>
         </div>
       </div>

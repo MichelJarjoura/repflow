@@ -11,6 +11,7 @@ import {
 } from "lucide-react";
 import { useAuth } from "@/core/auth/useAuth";
 import { useProfile } from "../useProfile";
+import { useFeed } from "@/features/feed/useFeed";
 
 function relativeTime(value: string) {
   const minutes = Math.max(1, Math.round((Date.now() - new Date(value).getTime()) / 60_000));
@@ -21,10 +22,16 @@ function relativeTime(value: string) {
 
 export function ProfilePage() {
   const { user, isAuthenticated } = useAuth();
-  const { profile, posts, physicalData, sessions, isLoading, error } = useProfile(
-    user?.id,
-    isAuthenticated,
-  );
+  const {
+    profile,
+    physicalData,
+    sessions,
+    isLoading: isProfileLoading,
+    error,
+  } = useProfile(user?.id, isAuthenticated);
+  const { posts: feedPosts, isLoading: isFeedLoading } = useFeed(isAuthenticated);
+  const posts = feedPosts.filter((post) => post.authorId === user?.id);
+  const isLoading = isProfileLoading || isFeedLoading;
   const displayName = profile?.username ?? user?.name ?? "Repflow athlete";
   const handle = profile?.username ?? user?.username ?? "@athlete";
   const records = physicalData?.personalRecords ?? [];
@@ -106,7 +113,7 @@ export function ProfilePage() {
             {isLoading ? (
               <LoadingPanel />
             ) : posts.length === 0 ? (
-              <EmptyPanel text="Your published workout and community posts will appear here." />
+              <EmptyPanel text="Your published posts will appear here as soon as they are visible in the feed." />
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 {posts.map((post) => (
