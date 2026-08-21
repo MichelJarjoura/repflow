@@ -8,6 +8,7 @@ import { PostComposer } from "./components/PostComposer";
 import { useFeed } from "./useFeed";
 import { useAuth } from "@/core/auth/useAuth";
 import { AuthModal } from "@/core/auth/components/AuthModal";
+import { ApiError } from "@/core/api/client";
 import { commentsApi, postApi, type BackendPost } from "@/core/api/repflow";
 
 function relativeTime(value: string) {
@@ -58,7 +59,7 @@ export function FeedPage() {
             <PostComposer onPublished={() => void refetch()} />
             <FeedFilter />
             {isLoading && <FeedLoading />}
-            {error && <FeedError onRetry={() => void refetch()} />}
+            {error && <FeedError error={error} onRetry={() => void refetch()} />}
             {!isLoading && !error && posts.length === 0 && <FeedEmpty />}
             {posts.map((post) => (
               <BackendFeedPost key={post.id} post={post} onToggleLike={toggleLike} />
@@ -201,10 +202,14 @@ function FeedLoading() {
     </div>
   );
 }
-function FeedError({ onRetry }: { onRetry: () => void }) {
+function FeedError({ error, onRetry }: { error: Error; onRetry: () => void }) {
+  const message =
+    error instanceof ApiError && error.status === 404
+      ? "The running backend does not expose a public Posts route, so community posts can work while the global feed stays unavailable."
+      : "The feed could not be loaded from the backend.";
   return (
     <div className="rounded-3xl border border-destructive/30 bg-destructive/10 p-6 text-center">
-      <p className="text-sm text-destructive">The feed could not be loaded from the backend.</p>
+      <p className="text-sm text-destructive">{message}</p>
       <button
         type="button"
         onClick={onRetry}

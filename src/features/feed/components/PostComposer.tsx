@@ -16,7 +16,7 @@ export function PostComposer({ onPublished }: PostComposerProps) {
       const trimmedContent = content.trim();
       if (!trimmedContent) throw new Error("Write a short update before publishing your post.");
       const mediaUrls = files.length ? (await mediaApi.uploadPostMedia(files)).urls : undefined;
-      return postApi.create({ content: trimmedContent, mediaUrls });
+      return postApi.create({ content: trimmedContent, communityId: undefined, mediaUrls });
     },
     onSuccess: () => {
       setContent("");
@@ -97,7 +97,8 @@ export function PostComposer({ onPublished }: PostComposerProps) {
       </div>
       {publish.error && (
         <p className="mt-3 rounded-xl border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive">
-          {publish.error.message}
+          {publish.error.message} If this says “not found”, the backend process currently running
+          does not expose the public Posts route yet.
         </p>
       )}
     </section>

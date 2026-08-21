@@ -1,4 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { ApiError } from "@/core/api/client";
 import { postApi, type BackendPost } from "@/core/api/repflow";
 
 export const feedQueryKeys = {
@@ -10,7 +11,14 @@ export function useFeed(enabled: boolean) {
   const queryClient = useQueryClient();
   const postsQuery = useQuery({
     queryKey: feedQueryKeys.posts(),
-    queryFn: postApi.getAll,
+    queryFn: async () => {
+      try {
+        return await postApi.getAll();
+      } catch (error) {
+        if (error instanceof ApiError && error.status === 404) return postApi.getFeed();
+        throw error;
+      }
+    },
     enabled,
   });
 

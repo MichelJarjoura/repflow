@@ -1,7 +1,9 @@
 import { useState } from "react";
 import * as Dialog from "@radix-ui/react-dialog";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { Link } from "@tanstack/react-router";
 import { Check, ImagePlus, LoaderCircle, Play, Plus, Trash2, X } from "lucide-react";
+import { ApiError } from "@/core/api/client";
 import { exerciseApi, mediaApi, postApi, userSessionApi } from "@/core/api/repflow";
 import { profileQueryKeys } from "@/features/profile/useProfile";
 
@@ -50,12 +52,22 @@ export function LogWorkoutCard() {
           }),
         ),
       );
-      const session = await userSessionApi.create({
-        description: description.trim() || undefined,
-        muscles,
-        totalDurationMinutes: Number(duration),
-        exercises: selected,
-      });
+      let session;
+      try {
+        session = await userSessionApi.create({
+          description: description.trim() || undefined,
+          muscles,
+          totalDurationMinutes: Number(duration),
+          exercises: selected,
+        });
+      } catch (error) {
+        if (error instanceof ApiError && error.status === 404) {
+          throw new Error(
+            "Workout logging is unavailable because the running backend does not expose the UserSessions endpoint. You can still share a standard progress post from the Feed.",
+          );
+        }
+        throw error;
+      }
       let mediaUrls: string[] | undefined;
       if (files.length) mediaUrls = (await mediaApi.uploadPostMedia(files)).urls;
       if (postCaption.trim()) {
@@ -183,6 +195,13 @@ export function LogWorkoutCard() {
                 {exercisesQuery.isLoading && (
                   <p className="text-sm text-muted-foreground">Loading exercises…</p>
                 )}
+                {exercisesQuery.error && (
+                  <p className="rounded-xl border border-destructive/30 bg-destructive/10 p-3 text-sm text-destructive">
+                    The running backend did not provide the exercise catalog needed for workout
+                    logging. Use the Feed composer to share an update until that endpoint is
+                    deployed.
+                  </p>
+                )}
                 {entries.map((entry, index) => (
                   <div
                     key={index}
@@ -268,13 +287,24 @@ export function LogWorkoutCard() {
                 </p>
               )}
               {saveMutation.error && (
-                <p className="rounded-xl border border-destructive/30 bg-destructive/10 p-3 text-sm text-destructive">
-                  {saveMutation.error.message}
-                </p>
+                <div className="rounded-xl border border-destructive/30 bg-destructive/10 p-3 text-sm text-destructive">
+                  <p>{saveMutation.error.message}</p>
+                  <Link
+                    to="/feed"
+                    onClick={() => setOpen(false)}
+                    className="mt-2 inline-block text-xs font-bold text-brand hover:underline"
+                  >
+                    Open Feed composer →
+                  </Link>
+                </div>
               )}
               <button
                 type="submit"
-                disabled={saveMutation.isPending || exercisesQuery.isLoading}
+                disabled={
+                  saveMutation.isPending ||
+                  exercisesQuery.isLoading ||
+                  Boolean(exercisesQuery.error)
+                }
                 className="inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-brand px-5 py-3.5 font-bold text-brand-foreground disabled:opacity-60"
               >
                 {saveMutation.isPending ? (
