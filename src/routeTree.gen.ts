@@ -11,7 +11,6 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as WorkoutsRouteImport } from './routes/workouts'
 import { Route as ProfileRouteImport } from './routes/profile'
-import { Route as HubRouteImport } from './routes/hub'
 import { Route as FeedRouteImport } from './routes/feed'
 import { Route as ExploreRouteImport } from './routes/explore'
 import { Route as CommunitiesRouteImport } from './routes/communities'
@@ -26,11 +25,6 @@ const WorkoutsRoute = WorkoutsRouteImport.update({
 const ProfileRoute = ProfileRouteImport.update({
   id: '/profile',
   path: '/profile',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const HubRoute = HubRouteImport.update({
-  id: '/hub',
-  path: '/hub',
   getParentRoute: () => rootRouteImport,
 } as any)
 const FeedRoute = FeedRouteImport.update({
@@ -64,7 +58,6 @@ export interface FileRoutesByFullPath {
   '/communities': typeof CommunitiesRoute
   '/explore': typeof ExploreRoute
   '/feed': typeof FeedRoute
-  '/hub': typeof HubRoute
   '/profile': typeof ProfileRouteWithChildren
   '/workouts': typeof WorkoutsRoute
   '/profile/$userId': typeof ProfileUserIdRoute
@@ -74,7 +67,6 @@ export interface FileRoutesByTo {
   '/communities': typeof CommunitiesRoute
   '/explore': typeof ExploreRoute
   '/feed': typeof FeedRoute
-  '/hub': typeof HubRoute
   '/profile': typeof ProfileRouteWithChildren
   '/workouts': typeof WorkoutsRoute
   '/profile/$userId': typeof ProfileUserIdRoute
@@ -85,7 +77,6 @@ export interface FileRoutesById {
   '/communities': typeof CommunitiesRoute
   '/explore': typeof ExploreRoute
   '/feed': typeof FeedRoute
-  '/hub': typeof HubRoute
   '/profile': typeof ProfileRouteWithChildren
   '/workouts': typeof WorkoutsRoute
   '/profile/$userId': typeof ProfileUserIdRoute
@@ -97,7 +88,6 @@ export interface FileRouteTypes {
     | '/communities'
     | '/explore'
     | '/feed'
-    | '/hub'
     | '/profile'
     | '/workouts'
     | '/profile/$userId'
@@ -107,7 +97,6 @@ export interface FileRouteTypes {
     | '/communities'
     | '/explore'
     | '/feed'
-    | '/hub'
     | '/profile'
     | '/workouts'
     | '/profile/$userId'
@@ -117,7 +106,6 @@ export interface FileRouteTypes {
     | '/communities'
     | '/explore'
     | '/feed'
-    | '/hub'
     | '/profile'
     | '/workouts'
     | '/profile/$userId'
@@ -128,7 +116,6 @@ export interface RootRouteChildren {
   CommunitiesRoute: typeof CommunitiesRoute
   ExploreRoute: typeof ExploreRoute
   FeedRoute: typeof FeedRoute
-  HubRoute: typeof HubRoute
   ProfileRoute: typeof ProfileRouteWithChildren
   WorkoutsRoute: typeof WorkoutsRoute
 }
@@ -147,13 +134,6 @@ declare module '@tanstack/react-router' {
       path: '/profile'
       fullPath: '/profile'
       preLoaderRoute: typeof ProfileRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/hub': {
-      id: '/hub'
-      path: '/hub'
-      fullPath: '/hub'
-      preLoaderRoute: typeof HubRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/feed': {
@@ -210,7 +190,6 @@ const rootRouteChildren: RootRouteChildren = {
   CommunitiesRoute: CommunitiesRoute,
   ExploreRoute: ExploreRoute,
   FeedRoute: FeedRoute,
-  HubRoute: HubRoute,
   ProfileRoute: ProfileRouteWithChildren,
   WorkoutsRoute: WorkoutsRoute,
 }
