@@ -1,98 +1,133 @@
+import { useMemo, useState } from "react";
+import { ArrowRight, Calendar, Flame, Trophy, Zap } from "lucide-react";
 import { useAuth } from "@/core/auth/useAuth";
 import { AuthModal } from "@/core/auth/components/AuthModal";
-import { useState } from "react";
-import { ArrowRight, Trophy, Zap, Target } from "lucide-react";
+import { useLocalWorkouts } from "@/features/workouts/useLocalWorkouts";
 
 export function IdentityCard() {
   const { isAuthenticated, user } = useAuth();
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
-
-  const lifts = [
-    { label: "Bench Press", value: 125 },
-    { label: "Back Squat", value: 160 },
-    { label: "Deadlift", value: 210 },
-  ];
+  const { workouts, stats } = useLocalWorkouts(user?.id);
+  const weeklyVolume = useMemo(() => {
+    const start = new Date();
+    start.setHours(0, 0, 0, 0);
+    start.setDate(start.getDate() - ((start.getDay() + 6) % 7));
+    return workouts
+      .filter((workout) => new Date(workout.createdAt) >= start)
+      .reduce(
+        (total, workout) =>
+          total +
+          workout.exercises.reduce(
+            (exerciseTotal, exercise) =>
+              exerciseTotal +
+              Number(exercise.sets || 0) *
+                Number(exercise.reps || 0) *
+                Number(exercise.weight || 0),
+            0,
+          ),
+        0,
+      );
+  }, [workouts]);
 
   if (!isAuthenticated) {
     return (
-      <div className="bg-elevated border border-brand/20 rounded-2xl p-6 relative overflow-hidden group">
-        <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
-          <Trophy size={80} className="text-brand rotate-12" />
+      <div className="relative overflow-hidden rounded-2xl border border-brand/20 bg-elevated p-6 group">
+        <div className="absolute right-0 top-0 p-4 opacity-10 transition-opacity group-hover:opacity-20">
+          <Trophy size={80} className="rotate-12 text-brand" />
         </div>
-
-        <h2 className="font-display text-2xl tracking-tight text-foreground mb-2">
+        <h2 className="mb-2 font-display text-2xl tracking-tight text-foreground">
           BUILD YOUR <span className="text-brand">IDENTITY</span>
         </h2>
-        <p className="text-muted-foreground text-sm mb-6 leading-relaxed relative z-10">
-          Track your PRs, join the leaderboard, and turn your progress into social content.
+        <p className="relative z-10 mb-6 text-sm leading-relaxed text-muted-foreground">
+          Track your workouts, show your progress, and turn training into social content.
         </p>
-
-        <div className="space-y-3 relative z-10">
-          <button
-            onClick={() => setIsAuthModalOpen(true)}
-            className="w-full bg-brand text-brand-foreground font-bold py-3 rounded-xl flex items-center justify-center gap-2 hover:opacity-90 transition-opacity"
-          >
-            Join RepFlow
-            <ArrowRight size={18} />
-          </button>
-
-          <div className="flex items-center justify-center gap-4 py-2">
-            <div className="flex flex-col items-center">
-              <Zap size={16} className="text-brand mb-1" />
-              <span className="text-[10px] text-muted-foreground uppercase font-mono">
-                Real-time
-              </span>
-            </div>
-            <div className="w-px h-4 bg-border" />
-            <div className="flex flex-col items-center">
-              <Target size={16} className="text-brand mb-1" />
-              <span className="text-[10px] text-muted-foreground uppercase font-mono">Verify</span>
-            </div>
-          </div>
-        </div>
-
+        <button
+          onClick={() => setIsAuthModalOpen(true)}
+          className="relative z-10 flex w-full items-center justify-center gap-2 rounded-xl bg-brand py-3 font-bold text-brand-foreground transition-opacity hover:opacity-90"
+        >
+          Join Repflow <ArrowRight size={18} />
+        </button>
         <AuthModal open={isAuthModalOpen} onOpenChange={setIsAuthModalOpen} defaultView="signup" />
       </div>
     );
   }
 
+  const topLifts = stats.personalRecords.slice(0, 3);
   return (
-    <div className="bg-card border border-border rounded-xl p-5">
-      <div className="mb-6">
-        <div className="flex items-center justify-between mb-4">
+    <section className="rounded-2xl border border-border bg-card p-5">
+      <div className="mb-5 flex items-center gap-3 border-b border-border pb-4">
+        <div className="grid size-10 place-items-center overflow-hidden rounded-xl bg-brand/10 text-sm font-bold text-brand">
+          {user?.avatar ? (
+            <img src={user.avatar} alt="" className="size-full object-cover" />
+          ) : (
+            (user?.name ?? "R").charAt(0).toUpperCase()
+          )}
+        </div>
+        <div className="min-w-0 flex-1">
+          <p className="truncate font-bold">{user?.name ?? "Repflow athlete"}</p>
+          <p className="mt-0.5 truncate text-[10px] font-mono uppercase tracking-widest text-muted-foreground">
+            Your training identity
+          </p>
+        </div>
+      </div>
+      <div>
+        <div className="mb-4 flex items-center justify-between">
           <h2 className="font-display text-xs tracking-[0.2em] text-muted-foreground uppercase">
-            IDENTITY
+            Top lifts
           </h2>
-          <span className="text-[10px] font-mono text-brand bg-brand/10 px-2 py-0.5 rounded-full">
-            VERIFIED
+          <span className="rounded-full bg-brand/10 px-2 py-0.5 text-[10px] font-mono text-brand">
+            LIVE DATA
           </span>
         </div>
-        <div className="space-y-4">
-          {lifts.map((l) => (
-            <div key={l.label}>
-              <p className="text-[10px] text-muted-foreground uppercase tracking-widest">
-                {l.label}
-              </p>
-              <p className="text-2xl font-display text-foreground">
-                {l.value}
-                <span className="text-sm text-muted-foreground ml-1">KG</span>
-              </p>
-            </div>
-          ))}
-        </div>
-      </div>
-      <div className="pt-4 border-t border-border">
-        <div className="flex justify-between items-end">
-          <div>
-            <p className="text-[10px] text-muted-foreground uppercase tracking-widest">Streak</p>
-            <p className="text-xl font-display text-brand">12 DAYS</p>
+        {topLifts.length ? (
+          <div className="space-y-3">
+            {topLifts.map((lift) => (
+              <div key={lift.exercise} className="flex items-end justify-between gap-3">
+                <p className="truncate text-xs uppercase tracking-wide text-muted-foreground">
+                  {lift.exercise}
+                </p>
+                <p className="shrink-0 font-display text-xl">
+                  {lift.weight}
+                  <span className="ml-1 text-xs text-muted-foreground">KG</span>
+                </p>
+              </div>
+            ))}
           </div>
-          <div className="text-right">
-            <p className="text-[10px] text-muted-foreground uppercase tracking-widest">Vol/Wk</p>
-            <p className="text-xl font-display text-foreground">42.5T</p>
-          </div>
-        </div>
+        ) : (
+          <p className="rounded-xl border border-dashed border-border bg-surface/20 p-3 text-xs leading-5 text-muted-foreground">
+            Save a weighted workout to show your top lifts here.
+          </p>
+        )}
       </div>
+      <div className="mt-5 grid grid-cols-3 gap-2 border-t border-border pt-4">
+        <IdentityMetric icon={Calendar} label="Sessions" value={String(stats.totalSessions)} />
+        <IdentityMetric icon={Flame} label="Streak" value={`${stats.streak}d`} />
+        <IdentityMetric
+          icon={Zap}
+          label="This week"
+          value={weeklyVolume ? `${(weeklyVolume / 1000).toFixed(1)}t` : "—"}
+        />
+      </div>
+    </section>
+  );
+}
+
+function IdentityMetric({
+  icon: Icon,
+  label,
+  value,
+}: {
+  icon: typeof Calendar;
+  label: string;
+  value: string;
+}) {
+  return (
+    <div className="min-w-0 rounded-xl bg-surface/35 p-2.5">
+      <Icon size={14} className="text-brand" />
+      <p className="mt-2 text-[9px] font-mono uppercase tracking-wide text-muted-foreground">
+        {label}
+      </p>
+      <p className="mt-0.5 truncate font-display text-lg">{value}</p>
     </div>
   );
 }

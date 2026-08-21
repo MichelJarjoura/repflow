@@ -209,53 +209,78 @@ export function LogWorkoutCard() {
                   </button>
                 </div>
                 <div className="space-y-3">
+                  <div className="hidden grid-cols-[1fr_4.5rem_4.5rem_5.5rem_auto] gap-2 px-3 text-[10px] font-mono uppercase tracking-widest text-muted-foreground sm:grid">
+                    <span>Exercise</span>
+                    <span>Sets</span>
+                    <span>Reps</span>
+                    <span>Weight (kg)</span>
+                    <span aria-hidden="true" />
+                  </div>
                   {exercises.map((exercise, index) => (
                     <div
                       key={exercise.id}
                       className="grid gap-2 rounded-2xl border border-border bg-surface/30 p-3 sm:grid-cols-[1fr_4.5rem_4.5rem_5.5rem_auto]"
                     >
-                      <input
-                        value={exercise.exercise}
-                        onChange={(event) =>
-                          updateExercise(exercise.id, { exercise: event.target.value })
-                        }
-                        placeholder={index === 0 ? "e.g. Barbell squat" : "Exercise name"}
-                        className="auth-input"
-                      />
-                      <input
-                        aria-label="Sets"
-                        type="number"
-                        min="1"
-                        value={exercise.sets}
-                        onChange={(event) =>
-                          updateExercise(exercise.id, { sets: event.target.value })
-                        }
-                        placeholder="Sets"
-                        className="auth-input"
-                      />
-                      <input
-                        aria-label="Reps"
-                        type="number"
-                        min="1"
-                        value={exercise.reps}
-                        onChange={(event) =>
-                          updateExercise(exercise.id, { reps: event.target.value })
-                        }
-                        placeholder="Reps"
-                        className="auth-input"
-                      />
-                      <input
-                        aria-label="Weight in kilograms"
-                        type="number"
-                        min="0"
-                        step="0.5"
-                        value={exercise.weight}
-                        onChange={(event) =>
-                          updateExercise(exercise.id, { weight: event.target.value })
-                        }
-                        placeholder="KG"
-                        className="auth-input"
-                      />
+                      <label className="space-y-1">
+                        <span className="text-[10px] font-mono uppercase tracking-widest text-muted-foreground sm:hidden">
+                          Exercise
+                        </span>
+                        <input
+                          value={exercise.exercise}
+                          onChange={(event) =>
+                            updateExercise(exercise.id, { exercise: event.target.value })
+                          }
+                          placeholder={index === 0 ? "e.g. Barbell squat" : "Exercise name"}
+                          className="auth-input w-full"
+                        />
+                      </label>
+                      <label className="space-y-1">
+                        <span className="text-[10px] font-mono uppercase tracking-widest text-muted-foreground sm:hidden">
+                          Sets
+                        </span>
+                        <input
+                          aria-label="Sets"
+                          type="number"
+                          min="1"
+                          value={exercise.sets}
+                          onChange={(event) =>
+                            updateExercise(exercise.id, { sets: event.target.value })
+                          }
+                          className="auth-input w-full"
+                        />
+                      </label>
+                      <label className="space-y-1">
+                        <span className="text-[10px] font-mono uppercase tracking-widest text-muted-foreground sm:hidden">
+                          Reps
+                        </span>
+                        <input
+                          aria-label="Reps"
+                          type="number"
+                          min="1"
+                          value={exercise.reps}
+                          onChange={(event) =>
+                            updateExercise(exercise.id, { reps: event.target.value })
+                          }
+                          className="auth-input w-full"
+                        />
+                      </label>
+                      <label className="space-y-1">
+                        <span className="text-[10px] font-mono uppercase tracking-widest text-muted-foreground sm:hidden">
+                          Weight (kg)
+                        </span>
+                        <input
+                          aria-label="Weight in kilograms"
+                          type="number"
+                          min="0"
+                          step="0.5"
+                          value={exercise.weight}
+                          onChange={(event) =>
+                            updateExercise(exercise.id, { weight: event.target.value })
+                          }
+                          placeholder="0"
+                          className="auth-input w-full"
+                        />
+                      </label>
                       <button
                         type="button"
                         disabled={exercises.length === 1}

@@ -2,7 +2,6 @@ import { Calendar, Clock3, Dumbbell, TrendingUp, Zap } from "lucide-react";
 import { useAuth } from "@/core/auth/useAuth";
 import { ConsistencyCalendar } from "./ConsistencyCalendar";
 import { LogWorkoutCard } from "./LogWorkoutCard";
-import { LogPRCard } from "./LogPRCard";
 import { useLocalWorkouts } from "../useLocalWorkouts";
 
 export function WorkoutsPage() {
@@ -60,7 +59,6 @@ export function WorkoutsPage() {
       <div className="grid gap-8 lg:grid-cols-12">
         <section className="space-y-6 lg:col-span-7">
           <LogWorkoutCard />
-          <LogPRCard />
         </section>
         <aside className="space-y-6 lg:col-span-5">
           <section className="rounded-3xl border border-border bg-card p-6">

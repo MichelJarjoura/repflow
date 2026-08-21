@@ -1,4 +1,5 @@
 import * as Tabs from "@radix-ui/react-tabs";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   BarChart3,
   Calendar,
@@ -7,6 +8,8 @@ import {
   Grid,
   Settings,
   TrendingUp,
+  Trash2,
+  LoaderCircle,
   Users,
   type LucideIcon,
 } from "lucide-react";
@@ -14,6 +17,7 @@ import { useAuth } from "@/core/auth/useAuth";
 import { useProfile } from "../useProfile";
 import { useFeed } from "@/features/feed/useFeed";
 import { useLocalWorkouts } from "@/features/workouts/useLocalWorkouts";
+import { postApi } from "@/core/api/repflow";
 
 function relativeTime(value: string) {
   const minutes = Math.max(1, Math.round((Date.now() - new Date(value).getTime()) / 60_000));
@@ -31,6 +35,13 @@ export function ProfilePage() {
   const displayName = profile?.username ?? user?.name ?? "Repflow athlete";
   const handle = profile?.username ?? user?.username ?? "@athlete";
   const { workouts, stats } = useLocalWorkouts(user?.id);
+  const queryClient = useQueryClient();
+  const deletePost = useMutation({
+    mutationFn: (postId: string) => postApi.remove(postId),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ["feed"] });
+    },
+  });
 
   return (
     <div className="max-w-5xl mx-auto pb-20 px-4 md:px-8">
@@ -101,6 +112,11 @@ export function ProfilePage() {
         </Tabs.List>
         <div className="px-4 md:px-10 pt-8">
           <Tabs.Content value="posts" className="focus:outline-hidden">
+            {deletePost.error && (
+              <p className="mb-5 rounded-xl border border-destructive/30 bg-destructive/10 p-3 text-sm text-destructive">
+                {deletePost.error.message}
+              </p>
+            )}
             {isLoading ? (
               <LoadingPanel />
             ) : posts.length === 0 ? (
@@ -109,7 +125,25 @@ export function ProfilePage() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 {posts.map((post) => (
                   <article key={post.id} className="rounded-3xl border border-border bg-card p-6">
-                    <p className="whitespace-pre-wrap text-sm leading-7">{post.content}</p>
+                    <div className="flex items-start justify-between gap-4">
+                      <p className="whitespace-pre-wrap text-sm leading-7">{post.content}</p>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          if (window.confirm("Delete this post? This cannot be undone."))
+                            deletePost.mutate(post.id);
+                        }}
+                        disabled={deletePost.isPending}
+                        aria-label="Delete post"
+                        className="grid size-9 shrink-0 place-items-center rounded-xl text-muted-foreground transition-colors hover:bg-destructive/10 hover:text-destructive disabled:opacity-50"
+                      >
+                        {deletePost.isPending && deletePost.variables === post.id ? (
+                          <LoaderCircle size={16} className="animate-spin" />
+                        ) : (
+                          <Trash2 size={16} />
+                        )}
+                      </button>
+                    </div>
                     {post.mediaUrls.length > 0 && (
                       <div className="mt-5 grid gap-2 sm:grid-cols-2">
                         {post.mediaUrls.map((url) => (
